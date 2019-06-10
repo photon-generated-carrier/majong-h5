@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+
+<head>
+	<meta charset="UTF-8" />
+	<title>exam1</title>
+	<script src="./lib/phaser.min.js"></script>
+</head>
+
+<body>
+
+	<script>
+
+		var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+
+		function preload() {
+			console.log('preload');
+			game.load.image('sky', 'assets/sky.png', 800, 200);
+			game.load.image('ground', 'assets/back.jpg');
+			game.load.image('star', 'assets/star.png');
+			game.load.image('cursor', 'assets/cursor.png');
+			game.load.spritesheet('dude', 'assets/dude.png', 32, 50);
+		}
+
+		var platforms;
+		var player;
+		var cursors;
+		var stars;
+		var score = 0;
+		var scoreText;
+		var mcursors;
+		var mcursor;
+
+		function create() {
+			console.log('create');
+			game.physics.startSystem(Phaser.Physics.ARCADE);
+			game.add.sprite(0, 0, 'sky');
+			platforms = game.add.group();
+			platforms.enableBody = true;
+			var ground = platforms.create(0, game.world.height - 64, 'ground');
+			ground.body.immovable = true;
+			// ground.body.allowGravity = false;
+			// ground.body.collideWorldBounds = true;
+			ground.scale.setTo(0.37, 0.02);
+			var ledge = platforms.create(400, 400, 'ground');
+			ledge.body.immovable = true;
+			ledge.scale.setTo(0.2, 0.01);
+			ledge = platforms.create(-150, 250, 'ground');
+			ledge.body.immovable = true;
+			ledge.scale.setTo(0.2, 0.01);
+
+			player = game.add.sprite(32, game.world.height - 150, 'dude');
+			game.physics.arcade.enable(player);
+			// player.body.bounce.y = 0.2;
+			// player.body.gravity.y = 300;
+			player.body.collideWorldBounds = true;
+			player.animations.add('left', [4, 5, 6, 7], 10, true);
+			player.animations.add('right', [8, 9, 10, 11], 10, true);
+			player.animations.add('up', [12, 13, 14, 15], 10, true);
+			player.animations.add('down', [0, 1, 2, 3], 10, true);
+
+			cursors = game.input.keyboard.createCursorKeys();
+
+			stars = game.add.group();
+			stars.enableBody = true;
+			for (var i = 0; i < 12; i++)
+			{
+				var star = stars.create(i * 70, 0, 'star');
+				star.scale.setTo(0.3, 0.3);
+				star.body.gravity.y = 300;
+				star.body.bounce.y = 0.7 + Math.random() * 0.2;
+			}
+
+			scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+
+			mcursors = game.add.group();
+			mcursors.enableBody = true;
+			mcursor = mcursors.create(game.world.centerX, game.world.centerY, 'cursor').scale.setTo(0.2, 0.2);
+		}
+
+		var lastAction = 0;
+		function update() {
+			// console.log('update');
+			game.physics.arcade.collide(player, platforms);
+
+			game.physics.arcade.collide(stars, platforms);
+			game.physics.arcade.overlap(player, stars, collectStar, null, this)
+
+			player.body.velocity.x = 0;
+			player.body.velocity.y = 0;
+			if (cursors.left.isDown)
+			{
+				player.body.velocity.x = -150;
+				lastAction = 0;
+				player.animations.play('left');
+			}
+			else if (cursors.right.isDown)
+			{
+				lastAction = 1;
+				player.body.velocity.x = 150;
+				player.animations.play('right');
+			}
+			else if (cursors.up.isDown)
+			{
+				lastAction = 2;
+				player.body.velocity.y = -150;
+				player.animations.play('up');
+			}
+			else if (cursors.down.isDown)
+			{
+				lastAction = 3;
+				player.body.velocity.y = 150;
+				player.animations.play('down');
+			}
+			else
+			{
+				player.animations.stop();
+				if (lastAction == 0)
+				{
+					player.frame = 4;
+				}
+				else if (lastAction == 1)
+				{
+					player.frame = 8;
+				}
+				else if (lastAction == 2)
+				{
+					player.frame = 12;
+				}
+				else
+				{
+					player.frame = 0;
+				}
+			}
+			// if (cursors.up.isDown && player.body.touching.down)
+			// {
+			// 	player.body.velocity.y = -350;
+			// }
+			game.input.addMoveCallback(move,this);
+			// game.input.deleteMoveCallback(move,this);
+
+			//是否正在触摸
+			var touching = false;
+			//监听按下事件
+			game.input.onDown.add(function(pointer){
+				//palyer.x是主角的横向中心，判断是指触摸点在主角的最左侧到最右侧的坐标范围内，
+				//就是点击的是小人本身，未判断y坐标
+				if(Math.abs(pointer.x - player.x) < player.width/2){
+					touching = true;
+				}
+				else
+				{
+					player.x = pointer.x;
+					player.y = pointer.y;
+				}
+			});
+			//监听离开事件
+			game.input.onUp.add(function(){
+				touching = false;
+			});
+		}
+
+		function collectStar (player, star) {
+			star.kill();
+		
+			score += 10;
+			scoreText.text = 'Score: ' + score;
+		}
+
+		function move(pointer,x,y,isTap) {
+			mcursors.x = x - game.world.centerX;
+			mcursors.y = y - game.world.centerY;
+		}
+
+	</script>
+
+</body>
