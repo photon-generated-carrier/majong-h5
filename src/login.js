@@ -10,8 +10,12 @@ var Login = {
 		game.add.sprite(0, 0, 'login');
 		this.platforms = game.add.group();
 		this.platforms.enableBody = true;
+
+		game.input.onDown.addOnce(function(){
+			$("#loginDiv").show()
+		})
 	},
 
 	update: function () {
 	},
-};
+}

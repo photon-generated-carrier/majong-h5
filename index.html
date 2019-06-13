@@ -4,11 +4,38 @@
 	<meta charset="UTF-8" />
 	<title>exam1</title>
 	<script src="./lib/phaser.min.js"></script>
+	<script src="./lib/jquery-3.4.1.min.js"></script>
 	<script src="./lib/socket.io.js"></script>
-	<script src="./src/login.js"></script>   
-	<script src="./src/game.js"></script>   
-	<script src="./src/main.js"></script>   
 </head>
 
 <body>
+	<div id="loginDiv" class="LoginDiv">
+		<form class="LoginForm">
+			<input id="user" type="text">输入用户名</input>
+			<input id="passwd" type="password">输入密码</input>
+			<input id="login" type="button">登录</input>
+		</form>
+	</div>
 </body>
+
+<script src="./src/login.js"></script>   
+<script src="./src/game.js"></script>   
+<script src="./src/main.js"></script>  
+
+<style type="text/css">
+div.LoginDiv {
+	color: purple;
+	position: absolute;
+	background-color: #d8da3d;
+	text-align: center;
+	top: 100px;
+	left: 100px;
+	width: 300px;
+	height: 100px;
+	border: 1px solid red;
+}
+#login {
+	margin-top: 20px;
+	width: 80px;
+}
+</style>
