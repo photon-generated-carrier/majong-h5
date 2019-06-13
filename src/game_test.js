@@ -1,6 +1,7 @@
-var Game = {
+var GameTest = {
 	preload: function () {
 		console.log('preload');
+		game.load.image('sky', 'assets/sky.png', 800, 200);
 		game.load.image('ground', 'assets/back.jpg');
 		game.load.image('star', 'assets/star.png');
 		game.load.image('cursor', 'assets/cursor.png');

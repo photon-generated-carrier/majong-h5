@@ -19,6 +19,13 @@ exports.Socket = {
 				console.log("login req: " + data);
 				login.Login(data, socket)
 			});
+
+			socket.on('rooms req', (data)=>{
+				console.log("rooms req: " + data);
+				var res = new Array()
+				res[0] = {id:1, num :2}
+				socket.emit('rooms rsp', res)
+			})
 		})
 	}
 }
