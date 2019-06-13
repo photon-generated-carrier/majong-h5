@@ -8,8 +8,14 @@ game.state.add('Game', Game);
 
 game.state.start('Login');
 
+var urlPath = window.document.location.href;
+console.log(urlPath)
+var index = urlPath.indexOf("/", 7);
+console.log(index)
+var serverPath = urlPath.substring(0, index);
+console.log(serverPath)
 $("#login").click(function(){
-	var socket = io.connect('http://localhost:8080');
+	var socket = io.connect(serverPath);
 	var user = $("#user").val()
 	var pwd = $("#passwd").val()
 	console.log("longin " + user + ":" + pwd);
