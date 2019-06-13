@@ -1,3 +1,4 @@
+
 var Room = {
 	preload: function () {
 		console.log('preload');
@@ -10,7 +11,7 @@ var Room = {
 		game.add.sprite(0, 0, 'sky');
 		this.platforms = game.add.group();
 		this.platforms.enableBody = true;
-		Socket.GetRooms(this.handleRooms)
+		Socket.GetRooms(this.handleRooms, this)
 
 		game.input.onDown.addOnce(function(){
 		})
@@ -18,17 +19,22 @@ var Room = {
 
 	update: function () {
 	},
+	buttons : new Array,
 
-	handleRooms : function(data) {
+	handleRooms : function(data, obj) {
+		console.log(obj)
 		console.log("get rooms: " + data.length);
-		this.buttons = new Array
 		for ( var i = 0; i < data.length; i++) {
 			console.log("room:" + data[i].id + " num:" + data[i].num);
-			this.buttons[i] = game.add.button(0 + 100 * i, 0, 'room', null, this);
-			this.buttons[i].onInputDown.add(this.actionClick, {id:data[i].id}); 
+			obj.buttons[i] = game.add.button(0 + 100 * i, 0, 'room', null, this);
+			obj.buttons[i].id = data[i].id;
+			obj.buttons[i].num = data[i].num;
+			obj.buttons[i].onInputDown.add(function(button,pointer){
+				obj.actionClick(button)
+			}, data[i]); 
 		}
 	},
 	actionClick : function(button) {
-		console.log("room click");
-	}
+		console.log("room click" + button.id + " " + button.num);
+	},
 }
