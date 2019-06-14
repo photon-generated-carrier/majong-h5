@@ -6,11 +6,11 @@ exports.Socket = {
 	},
 	bind: function() {
 		io.on('connection',  (socket)=>{
-			console.log('client connect server, ok!');
+			// console.log('client connect server, ok!');
 		 
 			// 监听断开连接状态：socket的disconnect事件表示客户端与服务端断开连接
 			socket.on('disconnect', ()=>{
-			  console.log('connect disconnect');
+			//   console.log('connect disconnect');
 			  socket.disconnect();
 			});
 			
@@ -25,6 +25,14 @@ exports.Socket = {
 				var res = new Array()
 				res[0] = {id:1, num :2}
 				socket.emit('rooms rsp', res)
+			})
+
+			socket.on('enter room req', (data)=>{
+				console.log("enter room req: " + data);
+				var res = new Array() // user列表
+				res[0] = {name: "zl"}
+				res[1] = {name: "mx"}
+				socket.emit('enter room rsp', res)
 			})
 		})
 	}

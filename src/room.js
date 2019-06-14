@@ -26,15 +26,26 @@ var Room = {
 		console.log("get rooms: " + data.length);
 		for ( var i = 0; i < data.length; i++) {
 			console.log("room:" + data[i].id + " num:" + data[i].num);
-			obj.buttons[i] = game.add.button(0 + 100 * i, 0, 'room', null, this);
+			obj.buttons[i] = game.add.button(0 + 100 * i, 50 * i, 'room', null, this);
+			obj.buttons[i].scale.setTo(3.7, 1)
 			obj.buttons[i].id = data[i].id;
 			obj.buttons[i].num = data[i].num;
+			obj.buttons[i].title = game.add.text(380 + 100 * i, 50 * i + 40, data[i].num + "/4", { fontSize: '64px', fill: '#0A0' });
+
 			obj.buttons[i].onInputDown.add(function(button,pointer){
 				obj.actionClick(button)
 			}, data[i]); 
 		}
 	},
+
 	actionClick : function(button) {
 		console.log("room click" + button.id + " " + button.num);
+		Socket.EnterRoom(this.handleEnterRomm, button.id, this)
 	},
+	
+	// 进入房间的回调
+	handleEnterRomm : function(data, obj) {
+		console.log("enter room back");
+		console.log(data);
+	}
 }
