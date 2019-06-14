@@ -1,4 +1,6 @@
 login = require("./login")
+game = require("./game")
+
 exports.Socket = {
 	io : {},
 	init: function(server) {
@@ -30,8 +32,16 @@ exports.Socket = {
 			socket.on('enter room req', (data)=>{
 				console.log("enter room req: " + data);
 				var res = new Array() // user列表
-				res[0] = {name: "zl"}
-				res[1] = {name: "mx"}
+				game.Game.rooms[data.roomid] = {}
+				var roominfo = game.Game.rooms[data.roomid]
+				roominfo.users = new Array()
+				roominfo.users[0] = {name: "zl"}
+				roominfo.users[1] = {name: "mx"}
+
+				for (i = 0; i < roominfo.users.length; i++)
+				{
+					res[i] = {name: roominfo.users[i].name}
+				}
 				socket.emit('enter room rsp', res)
 			})
 		})
