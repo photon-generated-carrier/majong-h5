@@ -65,7 +65,8 @@ var Room = {
 
 	actionCreate : function() {
 		console.log(this);
-		Socket.CreateRoom(this.handleCreateRomm, this.createButton.user, this)
+		this.getSocket.disconnect()
+		Socket.CreateRoom(this.handleCreateRomm, gUser.id, this)
 	},
 
 	actionClick : function(button) {
@@ -79,11 +80,20 @@ var Room = {
 		console.log("enter room back");
 		console.log(data);
 		// TODO:if failed, restart getRomms
+
+		obj.EnterRoom(data)
 	},
 
 	// 进入房间的回调
 	handleCreateRomm : function(data, obj) {
 		console.log("create room back");
 		console.log(data);
+		obj.EnterRoom(data)
+	},
+
+	EnterRoom : function(data) {
+		console.log("Enter room with:" + JSON.stringify(data));
+		gUsers = data;
+		game.state.start('Game');
 	}
 }

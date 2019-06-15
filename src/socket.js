@@ -21,12 +21,12 @@ var Socket = {
 	},
 
 	CreateRoom : function(handler, userid, obj) {
-		// var socket = io.connect(serverPath);
-		// console.log("create room:" + roomId);
-		// socket.emit('create room req', { user : gUser.id, roomid : roomId});
-		// socket.on('create room rsp', function (data) {
-		// 	socket.disconnect();
-		// 	handler(data, obj)
-		// })
+		var socket = io.connect(serverPath);
+		console.log("create room:" + userid);
+		socket.emit('create room req', { userid : gUser.id });
+		socket.on('create room rsp', function (data) {
+			socket.disconnect();
+			handler(data, obj)
+		})
 	}
 }

@@ -9,6 +9,7 @@ console.log(serverPath)
 var gUser = {}
 gUser.id = "yy"
 gUser.name = "神Y"
+var gUsers = new Array;
 
 // var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game', { preload: preload, create: create, update: update });
 var game = new Phaser.Game(980, 1742, Phaser.AUTO, 'game')
@@ -30,11 +31,11 @@ $("#login").click(function(){
 	socket.emit('login req', { id: user, password: pwd});
 	socket.on('login rsp', function (data) {
 		if (data.ret == 0) {
-			alert("登录成功！")
+			// alert("登录成功！")
 			$("#loginDiv").hide()
 			gUser.id = data.id
 			gUser.name = data.name
-			game.state.start('Game');
+			game.state.start('Room');
 		} else {
 			alert("登录失败！")
 		}

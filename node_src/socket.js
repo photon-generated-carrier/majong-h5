@@ -24,22 +24,22 @@ exports.Socket = {
 			
 			// 与客户端对应的接收指定的消息
 			socket.on('login req', (data)=>{
-				console.log("login req: " + data);
+				console.log("login req: " + JSON.stringify(data));
 				login.Login(data, socket)
 			});
 
 			socket.on('rooms req', (data)=>{
-				console.log("rooms req: " + data);
+				console.log("rooms req: " + JSON.stringify(data));
 				var res = new Array()
-				var num = GetRandomNum(0,4)
-				for (var i = 0; i < num; i++) {
-					res[i] = {id:1, num :GetRandomNum(0,4)}
-				}
+				// var num = GetRandomNum(0,4)
+				// for (var i = 0; i < num; i++) {
+				// 	res[i] = {id:1, num :GetRandomNum(0,4)}
+				// }
 				socket.emit('rooms rsp', res)
 			})
 
 			socket.on('enter room req', (data)=>{
-				console.log("enter room req: " + data);
+				console.log("enter room req: " + JSON.stringify(data));
 				var res = new Array() // user列表
 				// 第一人
 				if (game.Game.rooms[data.roomid] == undefined)
@@ -56,6 +56,25 @@ exports.Socket = {
 					res[i] = {name: roominfo.users[i].name}
 				}
 				socket.emit('enter room rsp', res)
+			})
+
+			socket.on('create room req', (data)=>{
+				console.log("create room req: " + JSON.stringify(data));
+				var roomid = new Date().getTime() / 1000;
+				var res = new Array() // user列表
+				game.Game.rooms[roomid] = {}
+				var roominfo = game.Game.rooms[roomid]
+				roominfo.users = new Array()
+				roominfo.users[0] = {id: data.userid}
+
+				console.log("game status: " + JSON.stringify(game.Game));
+
+				for (i = 0; i < roominfo.users.length; i++)
+				{
+					res[i] = game.Game.users[roominfo.users[i].id];
+				}
+
+				socket.emit('create room rsp', res)
 			})
 		})
 	}
