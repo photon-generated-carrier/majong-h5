@@ -32,7 +32,11 @@ exports.Socket = {
 			socket.on('enter room req', (data)=>{
 				console.log("enter room req: " + data);
 				var res = new Array() // user列表
-				game.Game.rooms[data.roomid] = {}
+				// 第一人
+				if (game.Game.rooms[data.roomid] == undefined)
+				{
+					game.Game.rooms[data.roomid] = {}
+				}
 				var roominfo = game.Game.rooms[data.roomid]
 				roominfo.users = new Array()
 				roominfo.users[0] = {name: "zl"}

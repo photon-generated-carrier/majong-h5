@@ -6,10 +6,13 @@ var index = urlPath.indexOf("/", 7);
 console.log(index)
 var serverPath = urlPath.substring(0, index);
 console.log(serverPath)
-var gUser = ""
+var gUser = {}
 
 // var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game', { preload: preload, create: create, update: update });
-var game = new Phaser.Game(document.documentElement.clientWidth, document.documentElement.clientHeight, Phaser.AUTO, 'game');
+var game = new Phaser.Game(980, 1742, Phaser.AUTO, 'game')
+// alert(document.documentElement.clientWidth)
+// alert(document.documentElement.clientHeight)
+game.scale = Phaser.ScaleManager.SHOW_ALL
 
 game.state.add('Login', Login);
 game.state.add('Room', Room);
@@ -22,12 +25,13 @@ $("#login").click(function(){
 	var user = $("#user").val()
 	var pwd = $("#passwd").val()
 	console.log("longin " + user + ":" + pwd);
-	socket.emit('login req', { username: user, password: pwd});
+	socket.emit('login req', { id: user, password: pwd});
 	socket.on('login rsp', function (data) {
 		if (data.ret == 0) {
 			alert("登录成功！")
 			$("#loginDiv").hide()
-			gUser = user
+			gUser.id = data.id
+			gUser.name = data.name
 			game.state.start('Game');
 		} else {
 			alert("登录失败！")
