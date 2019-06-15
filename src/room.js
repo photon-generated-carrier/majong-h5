@@ -2,7 +2,7 @@
 var Room = {
 	preload: function () {
 		console.log('preload');
-		game.load.image('sky', 'assets/sky.png', game.width, game.height);
+		game.load.image('ground', 'assets/ground.png');
 		game.load.image('room', 'assets/room.png');
 		game.load.image('button', 'assets/button.png');
 	},
@@ -10,7 +10,7 @@ var Room = {
 	getSocket : undefined,
 	create: function () {
 		console.log('create');
-		game.add.sprite(0, 0, 'sky');
+		game.add.sprite(0, 0, 'ground');
 		this.platforms = game.add.group();
 		this.platforms.enableBody = true;
 		this.getSocket = Socket.GetRooms(this.handleRooms, this)

@@ -41,6 +41,6 @@ var Socket = {
 
 	OnSvrDown : function() {
 		console.log("svr down!!!!")
-		alert("服务器断开连接。。。。")
+		// alert("服务器断开连接。。。。")
 	}
 }

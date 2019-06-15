@@ -9,6 +9,12 @@ exports.Login = function(data, socket) {
 		socket.emit('login rsp', {ret: -1})
 	}
 
+	if (game.Game.users[data.id] != undefined)
+	{
+		console.log(data.id + " is online");
+		socket.emit('login rsp', {ret: -10})
+	}
+
 	var client = redis.createClient(6379, '127.0.0.1')
 	client.on('error', function (err) {
 		console.log('Error ' + err);

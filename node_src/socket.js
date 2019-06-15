@@ -116,6 +116,19 @@ exports.Socket = {
 				socket.emit('create room rsp', res)
 
 			})
+
+			socket.on('start game req', (data)=>{
+				console.log('start game req')
+				var msg = {}
+				msg.state = "init card";
+
+				// 通知房间内的用户
+				var key = "room_" + data.roomid
+				for (var i in this.socekts[key])
+				{
+					this.socekts[key][i].emit('game msg', msg)
+				}
+			})
 		})
 	}
 }

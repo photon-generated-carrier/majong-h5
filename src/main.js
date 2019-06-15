@@ -29,12 +29,14 @@ $("#login").click(function(){
 	console.log("longin " + user + ":" + pwd);
 	socket.emit('login req', { id: user, password: pwd});
 	socket.on('login rsp', function (data) {
-		if (data.ret == 0) {
+		if (data.ret == 0 || data.ret == -10) {
 			// alert("登录成功！")
 			$("#loginDiv").hide()
 			gUser.id = data.id
 			gUser.name = data.name
 			game.state.start('Room');
+		} else if (data.ret == -10) {
+			alert("已在线")
 		} else {
 			alert("登录失败！")
 		}
