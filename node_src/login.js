@@ -26,7 +26,6 @@ exports.Login = function(data, socket) {
 			game.Game.users[data.id] = {}
 			game.Game.users[data.id].id = data.id
 			game.Game.users[data.id].name = user.name;
-
 			if (user == undefined) {
 				socket.emit('login rsp', {ret: -2})
 			} else {

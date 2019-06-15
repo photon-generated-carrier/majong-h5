@@ -1,5 +1,5 @@
 exports.Game = {
-	rooms : new Array,
+	rooms : new Map,
 	users : new Map,
 };
 

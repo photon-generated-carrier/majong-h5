@@ -66,13 +66,14 @@ var Room = {
 	actionCreate : function() {
 		console.log(this);
 		this.getSocket.disconnect()
-		Socket.CreateRoom(this.handleCreateRomm, gUser.id, this)
+		console.log(Game);
+		gGameSocket = Socket.CreateRoom(this.handleCreateRomm, gUser.id, this)
 	},
 
 	actionClick : function(button) {
 		console.log("room click" + button.id + " " + button.num);
 		this.getSocket.disconnect()
-		Socket.EnterRoom(this.handleEnterRomm, button.id, this)
+		gGameSocket = Socket.EnterRoom(this.handleEnterRomm, button.id, this)
 	},
 	
 	// 进入房间的回调

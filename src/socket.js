@@ -15,9 +15,9 @@ var Socket = {
 		console.log("enter rooms:" + roomId);
 		socket.emit('enter room req', { user : gUser.id, roomid : roomId});
 		socket.on('enter room rsp', function (data) {
-			socket.disconnect();
 			handler(data, obj)
 		})
+		return socket
 	},
 
 	CreateRoom : function(handler, userid, obj) {
@@ -25,8 +25,8 @@ var Socket = {
 		console.log("create room:" + userid);
 		socket.emit('create room req', { userid : gUser.id });
 		socket.on('create room rsp', function (data) {
-			socket.disconnect();
 			handler(data, obj)
 		})
+		return socket
 	}
 }

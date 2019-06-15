@@ -9,6 +9,7 @@ function GetRandomNum(Min,Max) {
 
 exports.Socket = {
 	io : {},
+	socekts : new Map,
 	init: function(server) {
 		io= require('socket.io')(server);
 	},
@@ -19,7 +20,15 @@ exports.Socket = {
 			// 监听断开连接状态：socket的disconnect事件表示客户端与服务端断开连接
 			socket.on('disconnect', ()=>{
 			//   console.log('connect disconnect');
-			  socket.disconnect();
+				socket.disconnect();
+				// 从列表中移除
+				for(var key in this.socekts) {
+					var index = this.socekts[key].indexOf(socket);
+					if (index > -1) {
+						console.log("remove from " + key)
+						this.socekts[key].splice(index, 1);
+					}
+				}
 			});
 			
 			// 与客户端对应的接收指定的消息
@@ -31,6 +40,9 @@ exports.Socket = {
 			socket.on('rooms req', (data)=>{
 				console.log("rooms req: " + JSON.stringify(data));
 				var res = new Array()
+				for (var key in game.Game.rooms) {
+					res.push({id:key, num :game.Game.rooms[key].users.length})
+				}
 				// var num = GetRandomNum(0,4)
 				// for (var i = 0; i < num; i++) {
 				// 	res[i] = {id:1, num :GetRandomNum(0,4)}
@@ -41,26 +53,30 @@ exports.Socket = {
 			socket.on('enter room req', (data)=>{
 				console.log("enter room req: " + JSON.stringify(data));
 				var res = new Array() // user列表
-				// 第一人
-				if (game.Game.rooms[data.roomid] == undefined)
-				{
-					game.Game.rooms[data.roomid] = {}
-				}
 				var roominfo = game.Game.rooms[data.roomid]
-				roominfo.users = new Array()
-				roominfo.users[0] = {name: "zl"}
-				roominfo.users[1] = {name: "mx"}
+				roominfo.users.push({id: data.user})
 
 				for (i = 0; i < roominfo.users.length; i++)
 				{
-					res[i] = {name: roominfo.users[i].name}
+					res[i] = game.Game.users[roominfo.users[i].id];
 				}
+
+				// 通知房间内的用户
+				var key = "room_" + data.roomid
+				for (var i in this.socekts[key])
+				{
+					console.log("notify user changed to:" + this.socekts[key][i].id + ", " + JSON.stringify(res))
+					io.to(this.socekts[key][i].id).emit('room users changed', res)
+				}
+
+				this.socekts[key].push(socket)
 				socket.emit('enter room rsp', res)
 			})
 
 			socket.on('create room req', (data)=>{
 				console.log("create room req: " + JSON.stringify(data));
-				var roomid = new Date().getTime() / 1000;
+				var roomid = Math.floor(new Date().getTime() / 1000);
+				console.log(roomid)
 				var res = new Array() // user列表
 				game.Game.rooms[roomid] = {}
 				var roominfo = game.Game.rooms[roomid]
@@ -74,7 +90,13 @@ exports.Socket = {
 					res[i] = game.Game.users[roominfo.users[i].id];
 				}
 
+				// 记录连接
+				var key = "room_" + roomid
+				this.socekts[key] = new Array;
+				this.socekts[key].push(socket)
+
 				socket.emit('create room rsp', res)
+
 			})
 		})
 	}

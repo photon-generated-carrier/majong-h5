@@ -10,6 +10,7 @@ var gUser = {}
 gUser.id = "yy"
 gUser.name = "神Y"
 var gUsers = new Array;
+var gGameSocket = undefined;
 
 // var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game', { preload: preload, create: create, update: update });
 var game = new Phaser.Game(980, 1742, Phaser.AUTO, 'game')
@@ -21,7 +22,7 @@ game.state.add('Login', Login);
 game.state.add('Room', Room);
 game.state.add('Game', Game);
 
-game.state.start('Room');
+game.state.start('Login');
 
 $("#login").click(function(){
 	var socket = io.connect(serverPath);
