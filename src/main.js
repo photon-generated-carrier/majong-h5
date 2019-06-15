@@ -7,6 +7,8 @@ console.log(index)
 var serverPath = urlPath.substring(0, index);
 console.log(serverPath)
 var gUser = {}
+gUser.id = "yy"
+gUser.name = "神Y"
 
 // var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game', { preload: preload, create: create, update: update });
 var game = new Phaser.Game(980, 1742, Phaser.AUTO, 'game')

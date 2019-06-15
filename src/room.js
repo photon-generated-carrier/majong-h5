@@ -7,12 +7,13 @@ var Room = {
 		game.load.image('button', 'assets/button.png');
 	},
 
+	getSocket : undefined,
 	create: function () {
 		console.log('create');
 		game.add.sprite(0, 0, 'sky');
 		this.platforms = game.add.group();
 		this.platforms.enableBody = true;
-		Socket.GetRooms(this.handleRooms, this)
+		this.getSocket = Socket.GetRooms(this.handleRooms, this)
 
 		game.input.onDown.addOnce(function(){
 		})
@@ -21,48 +22,68 @@ var Room = {
 	update: function () {
 	},
 	buttons : new Array,
-	loginButton : undefined,
+	createButton : undefined,
 
 	handleRooms : function(data, obj) {
 		console.log(obj)
 		console.log("get rooms: " + data.length);
+		for ( i = 0; i < obj.buttons.length; i++)
+		{
+			obj.buttons[i].title.kill()
+			obj.buttons[i].kill()
+		}
+		obj.buttons = [];
 		for ( var i = 0; i < data.length; i++) {
 			console.log("room:" + data[i].id + " num:" + data[i].num);
-			obj.buttons[i] = game.add.button(0 + 100 * i, 50, 'room', null, this);
+			obj.buttons[i] = game.add.button(0, 240 * i + 50, 'room', null, this);
 			// obj.buttons[i].scale.setTo(3.7, 1)
 			obj.buttons[i].id = data[i].id;
 			obj.buttons[i].num = data[i].num;
-			obj.buttons[i].title = game.add.text(380 + 100 * i, 50 + 40, data[i].num + "/4", { fontSize: '64px', fill: '#0A0' });
+			obj.buttons[i].title = game.add.text(obj.buttons[i].x + 380, obj.buttons[i].y + 40, data[i].num + "/4", { fontSize: '64px', fill: '#0A0' });
 
 			obj.buttons[i].onInputDown.add(function(button,pointer){
 				obj.actionClick(button)
 			}, data[i]); 
 		}
-		if (this.loginButton == undefined)
+		if (obj.createButton == undefined)
 		{
-			loginButton = game.add.button(100 + 100 * data.length, 520, 'button',null, this);
-			loginButton.title = game.add.text(loginButton.x + 40, loginButton.y + 30, '创建房间', { fontSize: '48px', fill: '#0AA' });
-			loginButton.user = gUser.id
-			loginButton.onInputDown.add(function(button, pointer){
-				obj.actionCreate(button)
+			obj.createButton = game.add.button(320, 240 * data.length + 60, 'button',null, this);
+			obj.createButton.title = game.add.text(obj.createButton.x + 40, obj.createButton.y + 30, '创建房间', { fontSize: '48px', fill: '#0AA' });
+			obj.createButton.user = gUser.id
+			obj.createButton.onInputDown.add(function(button, pointer){
+				obj.actionCreate()
 			}, null); 
+		} else {
+			obj.createButton.y = 240 * data.length + 60;
+			obj.createButton.title.y = obj.createButton.y + 30
 		}
-		
+
+		setTimeout(function() {
+			obj.getSocket.emit('rooms req', { user : gUser.id})
+		}, 1000);
 	},
 
-	actionCreate : function(button) {
-		console.log("room click" + button.id + " " + button.num);
-		Socket.EnterRoom(this.handleEnterRomm, button.id, this)
+	actionCreate : function() {
+		console.log(this);
+		Socket.CreateRoom(this.handleCreateRomm, this.createButton.user, this)
 	},
 
 	actionClick : function(button) {
 		console.log("room click" + button.id + " " + button.num);
+		this.getSocket.disconnect()
 		Socket.EnterRoom(this.handleEnterRomm, button.id, this)
 	},
 	
 	// 进入房间的回调
 	handleEnterRomm : function(data, obj) {
 		console.log("enter room back");
+		console.log(data);
+		// TODO:if failed, restart getRomms
+	},
+
+	// 进入房间的回调
+	handleCreateRomm : function(data, obj) {
+		console.log("create room back");
 		console.log(data);
 	}
 }

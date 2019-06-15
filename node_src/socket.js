@@ -1,6 +1,12 @@
 login = require("./login")
 game = require("./game")
 
+function GetRandomNum(Min,Max) {   
+	var Range = Max - Min;   
+	var Rand = Math.random();   
+	return(Min + Math.round(Rand * Range));   
+}
+
 exports.Socket = {
 	io : {},
 	init: function(server) {
@@ -25,7 +31,10 @@ exports.Socket = {
 			socket.on('rooms req', (data)=>{
 				console.log("rooms req: " + data);
 				var res = new Array()
-				res[0] = {id:1, num :2}
+				var num = GetRandomNum(0,4)
+				for (var i = 0; i < num; i++) {
+					res[i] = {id:1, num :GetRandomNum(0,4)}
+				}
 				socket.emit('rooms rsp', res)
 			})
 
