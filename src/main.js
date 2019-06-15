@@ -7,9 +7,7 @@ console.log(index)
 var serverPath = urlPath.substring(0, index);
 console.log(serverPath)
 var gUser = {}
-gUser.id = "yy"
-gUser.name = "神Y"
-var gUsers = new Array;
+var gGame = {};
 var gGameSocket = undefined;
 
 // var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game', { preload: preload, create: create, update: update });

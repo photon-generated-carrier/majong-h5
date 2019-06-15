@@ -91,7 +91,7 @@ var Room = {
 
 	EnterRoom : function(data) {
 		console.log("Enter room with:" + JSON.stringify(data));
-		gUsers = data;
+		gGame = data;
 		game.state.start('Game');
 	}
 }

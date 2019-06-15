@@ -57,13 +57,17 @@ exports.Socket = {
 
 			socket.on('enter room req', (data)=>{
 				console.log("enter room req: " + JSON.stringify(data));
-				var res = new Array() // user列表
+				var res = {};
+				res.users = new Array() // user列表
 				var roominfo = game.Game.rooms[data.roomid]
 				roominfo.users.push({id: data.user})
+				res.roominfo = {}
+				res.roominfo.id = roominfo.id;
+				res.roominfo.gm = roominfo.gm;
 
 				for (i = 0; i < roominfo.users.length; i++)
 				{
-					res[i] = game.Game.users[roominfo.users[i].id];
+					res.users[i] = game.Game.users[roominfo.users[i].id];
 				}
 
 				// 通知房间内的用户
@@ -82,7 +86,9 @@ exports.Socket = {
 				console.log("create room req: " + JSON.stringify(data));
 				var roomid = Math.floor(new Date().getTime() / 1000);
 				console.log(roomid)
-				var res = new Array() // user列表
+				var res = {};
+				res.users = new Array() // user列表
+				
 				game.Game.rooms[roomid] = {}
 				var roominfo = game.Game.rooms[roomid]
 				roominfo.id = roomid;
@@ -91,11 +97,15 @@ exports.Socket = {
 				roominfo.users = new Array()
 				roominfo.users[0] = {id: data.userid}
 
+				res.roominfo = {}
+				res.roominfo.id = roominfo.id;
+				res.roominfo.gm = roominfo.gm;
+
 				console.log("game status: " + JSON.stringify(game.Game));
 
 				for (i = 0; i < roominfo.users.length; i++)
 				{
-					res[i] = game.Game.users[roominfo.users[i].id];
+					res.users[i] = game.Game.users[roominfo.users[i].id];
 				}
 
 				// 记录连接
