@@ -7,6 +7,7 @@ var Socket = {
 			// socket.disconnect();
 			handler(data, obj)
 		})
+		
 		return socket;
 	},
 
@@ -16,6 +17,10 @@ var Socket = {
 		socket.emit('enter room req', { user : gUser.id, roomid : roomId});
 		socket.on('enter room rsp', function (data) {
 			handler(data, obj)
+		})
+		var my = this;
+		socket.on('disconnect', function (data) {
+			my.OnSvrDown();
 		})
 		return socket
 	},
@@ -27,6 +32,15 @@ var Socket = {
 		socket.on('create room rsp', function (data) {
 			handler(data, obj)
 		})
+		var my = this;
+		socket.on('disconnect', function (data) {
+			my.OnSvrDown();
+		})
 		return socket
+	}, 
+
+	OnSvrDown : function() {
+		console.log("svr down!!!!")
+		alert("服务器断开连接。。。。")
 	}
 }
