@@ -1,7 +1,7 @@
 var Login = {
 	preload: function () {
 		console.log('preload');
-		game.load.image('login', 'assets/login.jpg', 800, 200);
+		game.load.image('login', 'assets/first.png');
 	},
 
 	create: function () {
