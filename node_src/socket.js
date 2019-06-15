@@ -41,7 +41,12 @@ exports.Socket = {
 				console.log("rooms req: " + JSON.stringify(data));
 				var res = new Array()
 				for (var key in game.Game.rooms) {
-					res.push({id:key, num :game.Game.rooms[key].users.length})
+					var room = {};
+					room.id = key;
+					room.num = game.Game.rooms[key].users.length;
+					room.title = game.Game.rooms[key].title;
+					room.gm = game.Game.rooms[key].gm;
+					res.push(room)
 				}
 				// var num = GetRandomNum(0,4)
 				// for (var i = 0; i < num; i++) {
@@ -80,6 +85,9 @@ exports.Socket = {
 				var res = new Array() // user列表
 				game.Game.rooms[roomid] = {}
 				var roominfo = game.Game.rooms[roomid]
+				roominfo.id = roomid;
+				roominfo.gm = data.userid;
+				roominfo.title = game.Game.users[data.userid].name + "的房间" 
 				roominfo.users = new Array()
 				roominfo.users[0] = {id: data.userid}
 

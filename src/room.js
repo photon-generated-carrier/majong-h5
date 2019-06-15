@@ -25,7 +25,6 @@ var Room = {
 	createButton : undefined,
 
 	handleRooms : function(data, obj) {
-		console.log(obj)
 		console.log("get rooms: " + data.length);
 		for ( i = 0; i < obj.buttons.length; i++)
 		{
@@ -39,7 +38,7 @@ var Room = {
 			// obj.buttons[i].scale.setTo(3.7, 1)
 			obj.buttons[i].id = data[i].id;
 			obj.buttons[i].num = data[i].num;
-			obj.buttons[i].title = game.add.text(obj.buttons[i].x + 380, obj.buttons[i].y + 40, data[i].num + "/4", { fontSize: '64px', fill: '#0A0' });
+			obj.buttons[i].title = game.add.text(obj.buttons[i].x + 300, obj.buttons[i].y + 40, data[i].title + "\r\n" + data[i].num + "/4", { fontSize: '64px', fill: '#0A0' });
 
 			obj.buttons[i].onInputDown.add(function(button,pointer){
 				obj.actionClick(button)
@@ -64,9 +63,7 @@ var Room = {
 	},
 
 	actionCreate : function() {
-		console.log(this);
 		this.getSocket.disconnect()
-		console.log(Game);
 		gGameSocket = Socket.CreateRoom(this.handleCreateRomm, gUser.id, this)
 	},
 
