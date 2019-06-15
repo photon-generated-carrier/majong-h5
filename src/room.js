@@ -63,6 +63,10 @@ var Room = {
 	},
 
 	actionCreate : function() {
+		if (gUser.id == undefined) {
+			console.log("gUser.id is null, 请刷新")
+			return;
+		}
 		this.getSocket.disconnect()
 		gGameSocket = Socket.CreateRoom(this.handleCreateRomm, gUser.id, this)
 	},

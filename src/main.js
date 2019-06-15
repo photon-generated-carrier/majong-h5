@@ -1,4 +1,7 @@
 $("#loginDiv").hide()
+$(function (){
+    $("#login").popover();
+});
 
 var urlPath = window.document.location.href;
 console.log(urlPath)
@@ -29,16 +32,20 @@ $("#login").click(function(){
 	console.log("longin " + user + ":" + pwd);
 	socket.emit('login req', { id: user, password: pwd});
 	socket.on('login rsp', function (data) {
-		if (data.ret == 0 || data.ret == -10) {
+		if (data.ret == 0) {
 			// alert("登录成功！")
 			$("#loginDiv").hide()
 			gUser.id = data.id
 			gUser.name = data.name
 			game.state.start('Room');
 		} else if (data.ret == -10) {
-			alert("已在线")
+			// alert("已在线")
+			// $("#login").attr("data-content", "已在线") ;
+			$("#alertTxt").html("已在线") 
+			$("#myModal").modal()
 		} else {
-			alert("登录失败！")
+			$("#alertTxt").html("登陆失败")
+			$("#myModal").modal()
 		}
 		socket.disconnect();
 	})

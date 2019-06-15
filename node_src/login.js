@@ -28,15 +28,17 @@ exports.Login = function(data, socket) {
 		} else {
 			console.log('Got pwd: ' + value)
 			var user = JSON.parse(value)
-			// 内存记录
-			game.Game.users[data.id] = {}
-			game.Game.users[data.id].id = data.id
-			game.Game.users[data.id].name = user.name;
+		
 			if (user == undefined) {
 				socket.emit('login rsp', {ret: -2})
 			} else {
 				if (data.password == user.pwd) {
 					console.log('login ok!');
+					// 内存记录
+					game.Game.users[data.id] = {}
+					game.Game.users[data.id].id = data.id
+					game.Game.users[data.id].name = user.name;
+
 					socket.emit('login rsp', {ret: 0, id:data.id, name:user.name})
 					ret = 0
 				} else {

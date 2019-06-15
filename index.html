@@ -3,45 +3,96 @@
 <head>
 	<meta charset="UTF-8" />
 	<title>exam1</title>
+	<!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
 	<script src="./lib/phaser.min.js"></script>
-	<script src="./lib/jquery-3.4.1.min.js"></script>
 	<script src="./lib/socket.io.js"></script>
+	<!-- <script src="./lib/jquery-3.4.1.min.js"></script> -->
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
 
 <body>
-	<div id="loginDiv" class="LoginDiv">
+	<!-- <div id="loginDiv" class="LoginDiv">
 		<form class="LoginForm">
 			<input id="user" type="text">输入用户名</input>
 			<p></p>
 			<input id="passwd" type="password">输入密码</input>
 			<input id="login" type="button">登录</input>
 		</form>
+	</div> -->
+	<div id="loginDiv" class="LoginDiv">
+		<form class="LoginForm" class="bs-example bs-example-form" role="form">
+			<div class="form-group">
+				<label for="name">用户名</label>
+				<input type="text" class="form-control" id="user" placeholder="请输入用户名">
+			</div>
+			<div class="form-group">
+				<label for="name">用户名</label>
+				<input type="password" class="form-control" id="passwd" placeholder="输入密码">
+			</div>
+			<!-- <button type="button" id="login" class="btn btn-default" data-container="body" data-toggle="popover" data-placement="bottom"
+			data-content="登录失败">登陆</button> -->
+			<button type="button" id="login" class="btn btn-default">登陆</button>
+		</form>
 	</div>
+	<!-- 模态框（Modal） -->
+	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 class="modal-title" id="myModalLabel">┗|｀O′|┛ 嗷~~~~~~~~~~</h4>
+				</div>
+				<div id="alertTxt" class="modal-body"></div>
+				<div class="modal-footer">
+					<button id="alertBtn" type="button" class="btn btn-default" data-dismiss="modal">确认</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal -->
+	</div>
+
 </body>
 
 <script src="./src/socket.js"></script>   
 <script src="./src/login.js"></script>   
 <script src="./src/room.js"></script>   
 <script src="./src/game.js"></script>   
-<script src="./src/main.js"></script>  
+<script src="./src/main.js"></script>
 
 <style type="text/css">
+.popover-body {
+	color: #f10e4b;
+    font-size: 48px;
+}
+.modal-content {
+	font-size: 48px;
+    top: 350px;
+}
+.modal-title {
+	font-size: 36px;
+	color: #9aa1a7;
+}
+.modal-body {
+	color: #ff005c;
+	margin-left: 50px;
+}
 div.LoginDiv {
-	color: purple;
 	position: absolute;
-	background-color: #d8da3d;
-	text-align: left;
+	background-color: #f5f5f5;
 	top: 100px;
 	left: 100px;
-	width: 900px;
-	height: 600px;
-	border: 1px solid red;
+	padding: 50px 50px 10px;
+    border-radius: 40px;
+    margin-left: 15px;
 }
 #login {
-	margin-top: 40px;
-	margin-left: 200px;
-	width: 380px;
-	height: 120px;
+	margin-top: 10px;
+    margin-left: 180px;
+    width: 280px;
+    height: 100px;
+    font-size: 48px;
 }
 #user {
 	width:650px;
@@ -52,6 +103,13 @@ div.LoginDiv {
 	width: 650px;
 	height: 120px;
 	font-size: 48px;
+}
+#alertBtn {
+	font-size: 42px;
+	border: 1px solid black;
+    border-radius: 12px;
+    margin-right: 20px;
+    width: 200px;
 }
 form.LoginForm {
 	font-size: 48px;
