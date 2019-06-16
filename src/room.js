@@ -8,6 +8,17 @@ var Room = {
 	},
 
 	create: function () {
+		if (this.createButton != undefined) {
+			this.createButton.title.kill();
+			this.createButton.kill()
+			this.createButton = undefined
+		}
+		if (this.exitButton != undefined) {
+			this.exitButton.title.kill();
+			this.exitButton.kill()
+			this.exitButton = undefined
+		}
+
 		console.log('create');
 		game.add.sprite(0, 0, 'ground');
 		this.platforms = game.add.group();
@@ -96,7 +107,8 @@ var Room = {
 	actionExit : function() {
 		console.log("exit account");
 		this.needRefresh = false;
-		removeLocal("session")
+		ClearLocal("session")
+		Socket.NotifyAccountExit(gUser.id);
 		game.state.start("Login")
 	},
 	

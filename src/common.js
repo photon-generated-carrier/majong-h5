@@ -12,7 +12,7 @@ function GetLocal(key, exp) {
 	}
 	console.log("GetLocal get " + data)
 	var dataObj = JSON.parse(data);
-	if (new Date().getTime() - dataObj.time > exp) {
+	if (exp != undefined && new Date().getTime() - dataObj.time > exp) {
 		console.log(key + " 已过期")
 		return undefined
 	} else {

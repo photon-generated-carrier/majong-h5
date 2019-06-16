@@ -1,33 +1,6 @@
 var redis = require('redis')
 var game = require("./game")
 
-
-exports.UpdateSession = function(session) {
-	if (session == undefined) {
-		console.log("can't set undefined session")
-		return
-	}
-
-	var curTime = new Date().getTime();
-	if (game.Game.mSession[session]  == undefined) {
-		game.Game.mSession[session] = {}
-	}
-	game.Game.mSession[session].uptime = curTime
-}
-
-// exp:3600 * 24 * 1000
-exports.GetSessionInfo = function(session, exp) {
-	var curTime = new Date().getTime();
-	if (exp == undefined) { exp = 3600 * 24 * 1000 }
-	if (game.Game.mSession[session] != undefined &&
-		game.Game.mSession[session].uptime != undefined &&
-		(curTime - game.Game.mSession[session].uptime) < exp) {
-		return game.Game.mSession[session]
-	}
-	
-	return undefined
-}
-
 exports.Login = function(data, socket) {
 	if (data.id == "" || data.password == "")
 	{
@@ -59,7 +32,6 @@ exports.Login = function(data, socket) {
 		return
 	});
 
-	var obj = this;
 	client.hget('accounts', data.id, function(err, value) {
 		if (err) {
 			console.log('Error ' + err);
@@ -81,7 +53,7 @@ exports.Login = function(data, socket) {
 
 					var session = "session:" + data.id + ":" + curTime
 					// 更新缓存
-					obj.UpdateSession(session)
+					game.UpdateSession(session)
 
 					// 记录在线
 					game.Game.mOnline[data.id] = {}
@@ -134,11 +106,11 @@ exports.LoginWithSession = function(data, socket) {
 	}
 
 	// 检查 session有效
-	if (this.GetSessionInfo(data.session) != undefined) {
+	if (game.GetSessionInfo(data.session) != undefined) {
 		var name = game.GetUserName(userid)
 		
 		// 更新缓存
-		this.UpdateSession(data.session)
+		game.UpdateSession(data.session)
 
 		socket.emit('connect with session rsp', {ret: 0, id:userid, name: name, session: data.session})
 		socket.disconnect();

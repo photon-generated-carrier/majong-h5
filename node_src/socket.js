@@ -1,7 +1,7 @@
 login = require("./login")
 game = require("./game")
 
-// 在线用户保活
+// 在线用户保活踢出
 setInterval(function() {
 	var curTime = new Date().getTime();
 
@@ -56,7 +56,7 @@ exports.Socket = {
 			});
 
 			socket.on('rooms req', (data)=>{
-				console.log("rooms req: " + JSON.stringify(data));
+				// console.log("rooms req: " + JSON.stringify(data));
 				var res = new Array()
 				for (var key in game.Game.rooms) {
 					var room = {};
@@ -146,6 +146,30 @@ exports.Socket = {
 				{
 					this.socekts[key][i].emit('game msg', msg)
 				}
+			})
+
+			// 账号退出
+			socket.on('notify account exit', (data)=>{
+				console.log('notify account exit:' + data.userid)
+				delete game.Game.mOnline[data.userid];
+				socket.disconnect()
+			})
+		})
+
+		// 保活
+		io.of('/keepalive').on('connection', socket => {
+			// 保活
+			socket.on('keepalive', (data)=>{
+				console.log('keepalive:' + data.session)
+				var rsp = {ret: 0}
+				if (game.GetSessionInfo(data.session) == undefined) {
+					// 服务器down了
+					console.log('keepalive failed')
+					rsp.ret = -10;
+				} else {
+					game.UpdateAlive(data)
+				}
+				socket.emit('keepalive rsp', rsp)
 			})
 		})
 	}

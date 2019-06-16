@@ -67,4 +67,54 @@ var Socket = {
 			handler()
 		}
 	},
+
+	// 通知账号退出
+	NotifyAccountExit : function(userid) {
+		var socket = io.connect(serverPath);
+		console.log("account exit:" + userid);
+		socket.emit('notify account exit', { userid : userid });
+		// socket.disconnect()
+	},
+
+	alive : false,
+	KeepAlive : function() {
+		console.log("keep alive....");
+		this.alive = false; // 保活状态
+		socketAlive = io.connect(serverPath + "/keepalive", {reconnect:false,  'connect timeout': 100});
+		socketAlive.emit("keepalive", {userid: gUser.id, session: GetLocal("session")})
+		var obj = this;
+		socketAlive.on('keepalive rsp', function(rsp) {
+			if (rsp.ret == 0) {
+				obj.alive = true;
+				gAliveTime = new Date().getTime()
+			} else {
+				console.log("server restarted....");
+				clearInterval(gAliveId);
+				game.state.start("Login");
+			}
+		})
+
+		socketAlive.on('connect_error', function(data){
+			console.log(keepalive + ' - connect_error');
+			socketAlive.disconnect();
+		});
+		socketAlive.on('connect_timeout', function(data){
+			console.log(keepalive + ' - connect_timeout');
+			socketAlive.disconnect();
+		});
+
+		UpdateLocalTime("session")
+	},
+}
+
+function HandleKeepAlive() {
+	// 包活超时
+	if (new Date().getTime() - gAliveTime > 60 * 1000) {
+		console.log("keep alive timeout ....");
+		clearInterval(gAliveId);
+		game.state.start("Login");
+		return
+	}
+
+	Socket.KeepAlive()
 }
