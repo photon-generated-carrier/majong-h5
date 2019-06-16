@@ -78,8 +78,8 @@ var Room = {
 				obj.actionExit()
 			}, null); 
 		} else {
-			obj.createButton.y = 240 * data.length + 60;
-			obj.createButton.title.y = obj.createButton.y + 30
+			obj.exitButton.y = obj.createButton.y + 175;
+			obj.exitButton.title.y = obj.exitButton.y + 20
 		}
 
 		if (obj.needRefresh) {

@@ -21,30 +21,30 @@ var Socket = {
 	},
 
 	EnterRoom : function(handler, roomId, obj) {
-		var socket = io.connect(serverPath);
+		var socket = io.connect(serverPath + "/game");
 		console.log("enter rooms:" + roomId);
 		socket.emit('enter room req', { user : gUser.id, roomid : roomId});
 		socket.on('enter room rsp', function (data) {
 			handler(data, obj)
 		})
-		var my = this;
-		socket.on('disconnect', function (data) {
-			my.OnSvrDown();
-		})
+		// var my = this;
+		// socket.on('disconnect', function (data) {
+		// 	my.OnSvrDown();
+		// })
 		return socket
 	},
 
 	CreateRoom : function(handler, userid, obj) {
-		var socket = io.connect(serverPath);
+		var socket = io.connect(serverPath + "/game");
 		console.log("create room:" + userid);
 		socket.emit('create room req', { userid : gUser.id });
 		socket.on('create room rsp', function (data) {
 			handler(data, obj)
 		})
-		var my = this;
-		socket.on('disconnect', function (data) {
-			my.OnSvrDown();
-		})
+		// var my = this;
+		// socket.on('disconnect', function (data) {
+		// 	my.OnSvrDown();
+		// })
 		return socket
 	}, 
 
@@ -105,6 +105,15 @@ var Socket = {
 		});
 
 		UpdateLocalTime("session")
+	},
+
+	LeaveRoom : function(eGameSocket, roomid) {
+		if (eGameSocket == undefined || roomid == undefined) {
+			return
+		}
+		eGameSocket.emit("leave room", {userid: gUser.id, roomid:roomid})
+		// eGameSocket.disconnect();
+		eGameSocket = undefined;
 	},
 }
 

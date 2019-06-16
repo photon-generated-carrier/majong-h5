@@ -49,6 +49,10 @@ var Game = {
 		
 	},
 
+	dealEnd : function(msg) {
+		
+	},
+
 	handleGameMsg : function(msg) {
 		console.log("game msg: " + JSON.stringify(msg))
 		// 初始发牌
@@ -66,6 +70,9 @@ var Game = {
 			break;
 		case "win": // 结束
 			this.dealWin(msg);
+			break;
+		case "end": // 结束
+			this.dealEnd(msg);
 			break;
 		} 
 	},
@@ -134,7 +141,8 @@ var Game = {
 		this.exitButton.title = game.add.text(this.exitButton.x + 50, this.exitButton.y + 30, '退出房间', { fontSize: '48px', fill: '#0AA' });
 		this.exitButton.onInputDown.add(function(button, pointer){
 			console.log("退出房间")
-			// this.socket.disconnect();
+			// gGameSocket.disconnect();
+			Socket.LeaveRoom(gGameSocket, gGame.roominfo.id)
 			game.state.start("Room")
 		})
 
@@ -159,9 +167,10 @@ var Game = {
 	crown : undefined,
 	handleUserChanged : function(data) {
 		if (this.userInfo != undefined) {
-			for (var info in userInfo) {
-				info.head.kill()
-				info.txt.kill()
+			for (var i in this.userInfo) {
+				console.log("kill..")
+				this.userInfo[i].head.kill()
+				this.userInfo[i].txt.kill()
 			}
 		}
 
@@ -183,12 +192,12 @@ var Game = {
 		}
 
 		var users = data.users
-		userInfo = new Array;
+		this.userInfo = new Array;
 		if (users.length > 0) {
 			var info = {}
 			info.head = game.add.image(150, 32, 'head')
 			info.txt = game.add.text(300, 32, users[0].name, { fontSize: '48px', fill: '#0AA' });
-			userInfo.push(info)
+			this.userInfo.push(info)
 
 			if (users[0].id == data.roominfo.gm) {
 				this.crown = game.add.image(166, 16, 'crown')
@@ -199,7 +208,7 @@ var Game = {
 			var info = {}
 			info.head = game.add.image(150, 1640, 'head')
 			info.txt = game.add.text(300, 1640, users[1].name, { fontSize: '48px', fill: '#0AA' });
-			userInfo.push(info)
+			this.userInfo.push(info)
 
 			if (users[1].id == data.roominfo.gm) {
 				this.crown = game.add.image(166, 16, 'crown')
@@ -209,9 +218,9 @@ var Game = {
 		if (users.length > 2) {
 			var info = {}
 			info.head = game.add.image(25, 360, 'head')
-			info.txt = game.add.text(25 + 60, 465, "宵狗", { fontSize: '48px', fill: '#0AA' });
+			info.txt = game.add.text(25 + 60, 465, users[2].name, { fontSize: '48px', fill: '#0AA' });
 			info.txt.angle = 90;
-			userInfo.push(info)
+			this.userInfo.push(info)
 
 			if (users[2].id == data.roominfo.gm) {
 				this.crown = game.add.image(166, 16, 'crown')
@@ -221,9 +230,9 @@ var Game = {
 		if (users.length > 3) {
 			var info = {}
 			info.head = game.add.image(895, 360, 'head')
-			info.txt = game.add.text(895 + 60, 465, "阿杜狗", { fontSize: '48px', fill: '#0AA' });
+			info.txt = game.add.text(895 + 60, 465, users[3].name, { fontSize: '48px', fill: '#0AA' });
 			info.txt.angle = 90;
-			userInfo.push(info)
+			this.userInfo.push(info)
 
 			if (users[3].id == data.roominfo.gm) {
 				this.crown = game.add.image(166, 16, 'crown')

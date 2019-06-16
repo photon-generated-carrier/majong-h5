@@ -1,5 +1,5 @@
 exports.Game = {
-	rooms : new Map,
+	rooms : new Map, // {id, gm, started, title, users}
 	users : new Map,
 	mSession : new Map, // 连接列表
 	mOnline : new Map, // 在线列表
@@ -77,4 +77,8 @@ exports.UpdateOnline = function(userid, session) {
 exports.UpdateAlive = function(data) {
 	this.UpdateOnline(data.userid)
 	this.UpdateSession(data.session)
+}
+
+exports.removeRoom = function(roomid) {
+	delete game.Game.rooms[roomid]
 }

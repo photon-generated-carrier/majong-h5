@@ -5,18 +5,18 @@ function SetLocal(key, val) {
 }
 
 function GetLocal(key, exp) {
-	console.log("GetLocal with " + key + "," + exp)
+	// console.log("GetLocal with " + key + "," + exp)
 	var data = localStorage.getItem(key);
 	if (data == undefined) {
 		return undefined
 	}
-	console.log("GetLocal get " + data)
+	// console.log("GetLocal get " + data)
 	var dataObj = JSON.parse(data);
 	if (exp != undefined && new Date().getTime() - dataObj.time > exp) {
-		console.log(key + " 已过期")
+		// console.log(key + " 已过期")
 		return undefined
 	} else {
-		console.log("data=" + dataObj.data)
+		// console.log("data=" + dataObj.data)
 		return dataObj.data
 	}
 }
@@ -27,7 +27,7 @@ function UpdateLocalTime(key) {
 	if (data == undefined) {
 		return
 	}
-	console.log("UpdateLocal time for " + key)
+	// console.log("UpdateLocal time for " + key)
 	var dataObj = JSON.parse(data);
 	SetLocal(key, dataObj.data);
 }
