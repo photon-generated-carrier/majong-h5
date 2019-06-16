@@ -38,6 +38,7 @@ function handleLoginRsp(data) {
 	} else if (data.ret == -10) {
 		// alert("已在线")
 		// $("#login").attr("data-content", "已在线") ;
+		console.log("已在线")
 		$("#alertTxt").html("已在线") 
 		$("#myModal").modal()
 	} else {

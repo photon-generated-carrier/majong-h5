@@ -39,13 +39,13 @@ exports.Login = function(data, socket) {
 
 	var curTime = new Date().getTime();
 
-	// 检查在线
+	// 检查在线 TODO: 先检查密码再检查在线
 	if (game.Game.mOnline[data.id] != undefined) {
 		var user = game.Game.mOnline[data.id];
 		// 存在有效的登陆信息
 		if (user.uptime != undefined && (curTime - user.uptime) < 300 * 1000) {
 			console.log(data.id + " is online");
-			socket.emit('connect with session rsp', {ret: -10})
+			socket.emit('login rsp', {ret: -10})
 			socket.disconnect();
 			return
 		}
