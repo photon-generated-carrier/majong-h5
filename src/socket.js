@@ -90,6 +90,7 @@ var Socket = {
 			} else {
 				console.log("server restarted....");
 				clearInterval(gAliveId);
+				Room.needRefresh = false;
 				game.state.start("Login");
 			}
 		})
@@ -112,6 +113,7 @@ function HandleKeepAlive() {
 	if (new Date().getTime() - gAliveTime > 60 * 1000) {
 		console.log("keep alive timeout ....");
 		clearInterval(gAliveId);
+		Room.needRefresh = false;
 		game.state.start("Login");
 		return
 	}
