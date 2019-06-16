@@ -85,6 +85,7 @@ var Socket = {
 		var obj = this;
 		socketAlive.on('keepalive rsp', function(rsp) {
 			if (rsp.ret == 0) {
+				console.log("keep alive succ........");
 				obj.alive = true;
 				gAliveTime = new Date().getTime()
 			} else {

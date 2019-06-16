@@ -60,6 +60,18 @@ exports.Socket = {
 		}
 	},
 
+	SendGameMessageTo : function (roominfo, userid, msg) {
+		console.log("send msg to " + JSON.stringify(roominfo) + ", "+ userid + ", "+ JSON.stringify(msg))
+		// 通知房间内的用户
+		var key = "room_" + roominfo.id
+		for (var i in this.socekts[key])
+		{
+			if (this.socekts[key][i].userid == userid) {
+				this.socekts[key][i].emit('game msg', msg)
+			}
+		}
+	},
+
 	handleLeave : function(socket, data) {
 		if (data.userid == undefined || data.roomid == undefined) {
 			socket.disconnect();
@@ -186,7 +198,7 @@ exports.Socket = {
 		io.of('/keepalive').on('connection', socket => {
 			// 保活
 			socket.on('keepalive', (data)=>{
-				// console.log('keepalive:' + data.session)
+				console.log('keepalive:' + data.session)
 				var rsp = {ret: 0}
 				if (game.GetSessionInfo(data.session) == undefined) {
 					// 服务器down了
@@ -276,11 +288,28 @@ exports.Socket = {
 				var msg = {}
 				msg.state = "init card";
 
-				// game.removeRoom(data.roomid);
-
 				var roominfo = game.Game.rooms[data.roomid]
 				roominfo.started = true;
-				obj.SendGameMessage(roominfo, msg)
+
+				var games = game.Game.initGame()
+				game.Game.games[data.roomid] = {}
+				var mgames = game.Game.games[data.roomid]
+				mgames.cards = games.cards
+				mgames.state = "change" // 换牌阶段
+				// msg.cards = mgames.cards;
+
+				// obj.SendGameMessage(roominfo, msg)
+
+				mgames.users = []
+				for (var i = 0; i < 4; i++) {
+					mgames.users[i] = {}
+					mgames.users[i].id = roominfo.users[i].id;
+					mgames.users[i].cards = games.vec[i]
+					msg.usercards = games.vec[i]
+					// msg.banker = mgames.users[i].id
+					// 手牌单独发给用户
+					obj.SendGameMessageTo(roominfo, mgames.users[i].id, msg)
+				}
 			})
 		});
 	}

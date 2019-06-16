@@ -21,19 +21,39 @@ var Game = {
 	*/
 	allcardsP : {x : 235, y: 370 },
 
+	cards : [],
+	cardsS : [],
+
 	renderCards : function(msg) {
-		test = new Array
-		test.push(11,11,13,19,23,24,29,35,33,39,11,18)
-		var dx = 70;
-		var dy = dx / 196 * 256;
-		var scaleX = dx / 196;
-		var scaleY = dy / 256;
-		var i = 0;
-		for (var i = 0; i < test.length; i++) {
-			var x = this.allcardsP.x + 10 + (i % 7) * dx
-			var y = this.allcardsP.y + 5 + Math.floor(i / 7) * dy
-			var index = Math.floor(test[i] / 10) * 9 + test[i] % 10 - 1;
-			game.add.image(x, y, "card", index).scale.setTo(scaleX, scaleY)
+		// 打出的牌
+		if (msg.cards != undefined) {
+
+		} else if (msg.usercards != undefined) {
+			this.cards = msg.usercards;
+			// 手牌区
+			var dx = 70;
+			var dy = dx / 196 * 256;
+			var scaleX = dx / 196;
+			var scaleY = dy / 256;
+			var i = 0;
+			this.cardsS = []
+			for (var i = 0; i < msg.usercards.length; i++) {
+				var x = this.allcardsP.x + 10 + (i % 7) * dx
+				var y = this.allcardsP.y + 5 + Math.floor(i / 7) * dy
+				var index = Math.floor(msg.usercards[i] / 10) * 9 + msg.usercards[i] % 10 - 1;
+				var image = game.add.button(x, y, "card", null, index, index, index);
+				image.scale.setTo(scaleX, scaleY)
+				image.onInputDown.add(function(button, pointer){
+					var scaleXX = scaleX
+					var scaleYY = scaleY
+					if (button.scale.x == scaleX) {
+						scaleXX = scaleX * 1.5
+						scaleYY = scaleY * 1.5
+					}
+					button.scale.setTo(scaleXX, scaleYY)
+				}, null)
+				this.cardsS.push(image)
+			}
 		}
 	},
 
@@ -53,6 +73,10 @@ var Game = {
 		
 	},
 
+	DoChange : function(msg) {
+		
+	},
+
 	handleGameMsg : function(msg) {
 		console.log("game msg: " + JSON.stringify(msg))
 		// 初始发牌
@@ -60,7 +84,16 @@ var Game = {
 		switch (msg.state)
 		{
 		case "init card": // 开局
+			this.startButton.kill();
+			this.startButton.title.kill();
+			this.exitButton.scale.setTo(0.5, 0.5)
+			this.exitButton.title.scale.setTo(0.5, 0.5)
+			this.exitButton.x = 800;
+			this.exitButton.y = 10;
+			this.exitButton.title.x = this.exitButton.x + 25;
+			this.exitButton.title.y = this.exitButton.y + 15;
 			this.renderCards(msg) // 显示
+			this.DoChange();
 			break;
 		case "one card": // 打了一张牌
 			this.dealOneCard(msg)
@@ -152,14 +185,7 @@ var Game = {
 	exitButton : undefined,
 	StartGame : function() {
 		console.log("开始游戏！");
-		this.startButton.kill();
-		this.startButton.title.kill();
-		this.exitButton.scale.setTo(0.5, 0.5)
-		this.exitButton.title.scale.setTo(0.5, 0.5)
-		this.exitButton.x = 800;
-		this.exitButton.y = 10;
-		this.exitButton.title.x = this.exitButton.x + 25;
-		this.exitButton.title.y = this.exitButton.y + 15;
+
 		gGameSocket.emit("start game req", {roomid: gGame.roominfo.id})
 	},
 

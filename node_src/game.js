@@ -1,8 +1,57 @@
+
 exports.Game = {
 	rooms : new Map, // {id, gm, started, title, users}
 	users : new Map,
 	mSession : new Map, // 连接列表
 	mOnline : new Map, // 在线列表
+	games : new Map, // roomid -> {users:{id, cards:[]}, cards:{}}
+
+	ShuffleSwap : function(arr) {
+		if(arr.length == 1) return arr;
+		let i = arr.length;
+		while(--i > 1) {
+		  let j = Math.floor(Math.random() * (i+1));
+		  [arr[i], arr[j]] = [arr[j], arr[i]];
+		}
+		return arr;
+	  },
+
+	/* 洗牌
+	return:
+	  vec: 4组牌
+	  cards: 牌库
+	*/
+	initGame : function() {
+		var cards = new Array
+		// 万条筒
+		for (var i = 1; i <= 9; i++) {
+			cards.push(10 + i);
+			cards.push(10 + i);
+			cards.push(10 + i);
+			cards.push(10 + i);
+			cards.push(20 + i);
+			cards.push(20 + i);
+			cards.push(20 + i);
+			cards.push(20 + i);
+			cards.push(30 + i);
+			cards.push(30 + i);
+			cards.push(30 + i);
+			cards.push(30 + i);
+		}
+
+		this.ShuffleSwap(cards);
+		var game = {};
+		game.vec = new Array()
+		game.vec[0] = cards.slice(0, 13)
+		game.vec[1] = cards.slice(13, 26)
+		game.vec[2] = cards.slice(26, 39)
+		game.vec[3] = cards.slice(39, 52)
+		game.cards = cards.slice(52);
+
+		// game.banker = Math.floor(Math.random() * (4));
+		console.log(game);
+		return game
+	}
 };
 
 this.Game.users["yy"] = {}
