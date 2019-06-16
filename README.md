@@ -13,5 +13,7 @@ cnpm install cookie-parser --save
 
 cnpm install multer --save
 
+cnpm install log4js --save
+
 ## run
 node express_demo.js

@@ -1,5 +1,34 @@
 var express = require('express')
 var app = express();
+var log4js = require('log4js');
+var logger = log4js.getLogger();
+logger.level = 'debug';
+
+Object.defineProperty(global, '__stack', {
+	get: function(){
+	  var orig = Error.prepareStackTrace;
+	  Error.prepareStackTrace = function(_, stack){ return stack; };
+	  var err = new Error;
+	  Error.captureStackTrace(err, arguments.callee);
+	  var stack = err.stack;
+	  Error.prepareStackTrace = orig;
+	  return stack;
+	}
+  });
+  
+Object.defineProperty(global, '__line', {
+get: function(){
+	return __stack[1].getLineNumber();
+}
+});
+  
+console.log(__dirname);
+console.log(__filename);
+console.log(__line);
+
+logger.LOG_DEBUG = function (filename, line, d) {
+	logger.debug("[" + filename + "][" + line + "] " + d)
+}
 
 app.use('/lib', express.static('lib'));
 app.use('/src', express.static('src'));
@@ -16,7 +45,7 @@ app.get('/', function(req, res) {
 var server = app.listen(8080, function() {
 	var host = server.address().address
 	var port = server.address().port
-	console.log("http://%s:%s", host, port)
+	logger.LOG_DEBUG("http://%s:%s", host, port)
 })
 
 var socket = require("./node_src/socket")

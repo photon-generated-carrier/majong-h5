@@ -1,5 +1,11 @@
 login = require("./login")
 game = require("./game")
+var log4js = require('log4js');
+var logger = log4js.getLogger();
+
+logger.LOG_DEBUG = function (filename, line, d) {
+	logger.debug("[" + filename + "][" + line + "] " + d)
+}
 
 // 在线用户保活踢出
 setInterval(function() {
@@ -8,7 +14,7 @@ setInterval(function() {
 	for (var key in game.Game.mOnline) {
 		var user = game.Game.mOnline[key]
 		if ((curTime - user.uptime) > 240 * 1000) {
-			console.log("remove " + key + "from online list, time:" + user.uptime)
+			logger.LOG_DEBUG(__filename, __line, "remove " + key + "from online list, time:" + user.uptime)
 			delete game.Game.mOnline[key];  
 		}
 	}
@@ -42,7 +48,7 @@ exports.Socket = {
 		var key = "room_" + roominfo.id
 		for (var i in this.socekts[key])
 		{
-			console.log("notify user changed to:" + this.socekts[key][i].id + ", " + JSON.stringify(res))
+			logger.LOG_DEBUG(__filename, __line, "notify user changed to:" + this.socekts[key][i].id + ", " + JSON.stringify(res))
 			this.socekts[key][i].emit('room users changed', res)
 		}
 
@@ -51,7 +57,7 @@ exports.Socket = {
 	
 	// 向房间发送游戏消息
 	SendGameMessage : function (roominfo, msg) {
-		console.log("send msg to " + JSON.stringify(roominfo) + ", "+ JSON.stringify(msg))
+		logger.LOG_DEBUG(__filename, __line, "send msg to " + JSON.stringify(roominfo) + ", "+ JSON.stringify(msg))
 		// 通知房间内的用户
 		var key = "room_" + roominfo.id
 		for (var i in this.socekts[key])
@@ -61,7 +67,7 @@ exports.Socket = {
 	},
 
 	SendGameMessageTo : function (roominfo, userid, msg) {
-		console.log("send msg to " + JSON.stringify(roominfo) + ", "+ userid + ", "+ JSON.stringify(msg))
+		logger.LOG_DEBUG(__filename, __line, "send msg to " + JSON.stringify(roominfo) + ", "+ userid + ", "+ JSON.stringify(msg))
 		// 通知房间内的用户
 		var key = "room_" + roominfo.id
 		for (var i in this.socekts[key])
@@ -77,13 +83,13 @@ exports.Socket = {
 			socket.disconnect();
 		}
 
-		console.log(data.userid + " leave room " + data.roomid)
+		logger.LOG_DEBUG(__filename, __line, data.userid + " leave room " + data.roomid)
 		var founded = false;
 		// 从socket列表中移除
 		for(var key in this.socekts) {
 			var index = this.socekts[key].indexOf(socket);
 			if (index > -1) {
-				console.log("remove from " + key)
+				logger.LOG_DEBUG(__filename, __line, "remove from " + key)
 				this.socekts[key].splice(index, 1);
 				founded = true;
 			}
@@ -96,7 +102,7 @@ exports.Socket = {
 		key = "room_" + data.roomid;
 		// 游戏已开始
 		if (roominfo.started != undefined && roominfo.started) {
-			console.log("game had started...")
+			logger.LOG_DEBUG(__filename, __line, "game had started...")
 			var msg = {}
 			msg.state = "end";
 			msg.oper = data.userid;
@@ -106,7 +112,7 @@ exports.Socket = {
 			// 更新人员
 			for (var i = 0; i < roominfo.users.length; i++) {
 				if (roominfo.users[i].id == data.userid) {
-					console.log("remove " + data.userid + " from room")
+					logger.LOG_DEBUG(__filename, __line, "remove " + data.userid + " from room")
 					roominfo.users.splice(i, 1);
 					break;
 				}
@@ -114,7 +120,7 @@ exports.Socket = {
 
 			// 是否还有人
 			if (roominfo.users.length == 0) {
-				console.log("destroy room " + roominfo.id)
+				logger.LOG_DEBUG(__filename, __line, "destroy room " + roominfo.id)
 				// 销毁房间
 				game.removeRoom(roominfo.id);
 				socket.disconnect();
@@ -123,12 +129,12 @@ exports.Socket = {
 
 			// 房主更换
 			if (roominfo.gm == data.userid) {
-				console.log("change gm from " + data.userid + " to " + roominfo.users[0].id)
+				logger.LOG_DEBUG(__filename, __line, "change gm from " + data.userid + " to " + roominfo.users[0].id)
 				roominfo.gm = roominfo.users[0].id
 			}
 
 			// 通知
-			console.log(roominfo)
+			logger.LOG_DEBUG(__filename, __line, roominfo)
 			this.NotifyUserChange(roominfo)
 		}
 		socket.disconnect();
@@ -157,13 +163,13 @@ exports.Socket = {
 			// });
 
 			socket.on('connect with session req', (data)=>{
-				console.log("connect with session req " + JSON.stringify(data));
+				logger.LOG_DEBUG(__filename, __line, "connect with session req " + JSON.stringify(data));
 				login.LoginWithSession(data, socket)
 			});
 			
 			// 与客户端对应的接收指定的消息
 			socket.on('login req', (data)=>{
-				console.log("login req: " + JSON.stringify(data));
+				logger.LOG_DEBUG(__filename, __line, "login req: " + JSON.stringify(data));
 				login.Login(data, socket)
 			});
 
@@ -188,7 +194,7 @@ exports.Socket = {
 
 			// 账号退出
 			socket.on('notify account exit', (data)=>{
-				console.log('notify account exit:' + data.userid)
+				logger.LOG_DEBUG(__filename, __line, 'notify account exit:' + data.userid)
 				delete game.Game.mOnline[data.userid];
 				socket.disconnect()
 			})
@@ -198,11 +204,11 @@ exports.Socket = {
 		io.of('/keepalive').on('connection', socket => {
 			// 保活
 			socket.on('keepalive', (data)=>{
-				console.log('keepalive:' + data.session)
+				logger.LOG_DEBUG(__filename, __line, 'keepalive:' + data.session)
 				var rsp = {ret: 0}
 				if (game.GetSessionInfo(data.session) == undefined) {
 					// 服务器down了
-					console.log('keepalive failed')
+					logger.LOG_DEBUG(__filename, __line, 'keepalive failed')
 					rsp.ret = -10;
 				} else {
 					game.UpdateAlive(data)
@@ -215,9 +221,9 @@ exports.Socket = {
 		io.of('/game').on('connection', socket => {
 
 			socket.on('disconnect', (data)=>{
-				console.log(socket.id)
-				console.log(socket.userid)
-				console.log(socket.roomid)
+				logger.LOG_DEBUG(__filename, __line, socket.id)
+				logger.LOG_DEBUG(__filename, __line, socket.userid)
+				logger.LOG_DEBUG(__filename, __line, socket.roomid)
 				obj.handleLeave(socket, {userid:socket.userid, roomid:socket.roomid})
 			})
 
@@ -226,7 +232,7 @@ exports.Socket = {
 			})
 
 			socket.on('enter room req', (data)=>{
-				console.log("enter room req: " + JSON.stringify(data));
+				logger.LOG_DEBUG(__filename, __line, "enter room req: " + JSON.stringify(data));
 
 				// 加入
 				var roominfo = game.Game.rooms[data.roomid]
@@ -242,9 +248,9 @@ exports.Socket = {
 			})
 
 			socket.on('create room req', (data)=>{
-				console.log("create room req: " + JSON.stringify(data));
+				logger.LOG_DEBUG(__filename, __line, "create room req: " + JSON.stringify(data));
 				var roomid = Math.floor(new Date().getTime() / 1000);
-				console.log(roomid)
+				logger.LOG_DEBUG(__filename, __line, roomid)
 				var res = {};
 				res.users = new Array() // user列表
 				
@@ -258,13 +264,13 @@ exports.Socket = {
 				// TODO: 测试账号
 				roominfo.users.push({id: "j1"})
 				roominfo.users.push({id: "j2"})
-				roominfo.users.push({id: "j3"})
+				// roominfo.users.push({id: "j3"})
 
 				res.roominfo = {}
 				res.roominfo.id = roominfo.id;
 				res.roominfo.gm = roominfo.gm;
 
-				console.log("game status: " + JSON.stringify(game.Game));
+				logger.LOG_DEBUG(__filename, __line, "game status: " + JSON.stringify(game.Game));
 
 				for (i = 0; i < roominfo.users.length; i++)
 				{
@@ -284,7 +290,7 @@ exports.Socket = {
 			})
 
 			socket.on('start game req', (data)=>{
-				console.log('start game req ' + data.roomid)
+				logger.LOG_DEBUG(__filename, __line, 'start game req ' + data.roomid)
 				var msg = {}
 				msg.state = "init card";
 
