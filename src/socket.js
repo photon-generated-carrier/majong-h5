@@ -96,11 +96,11 @@ var Socket = {
 		})
 
 		socketAlive.on('connect_error', function(data){
-			console.log(keepalive + ' - connect_error');
+			console.log("keepalive" + ' - connect_error');
 			socketAlive.disconnect();
 		});
 		socketAlive.on('connect_timeout', function(data){
-			console.log(keepalive + ' - connect_timeout');
+			console.log("keepalive" + ' - connect_timeout');
 			socketAlive.disconnect();
 		});
 
