@@ -51,6 +51,7 @@ exports.Socket = {
 	
 	// 向房间发送游戏消息
 	SendGameMessage : function (roominfo, msg) {
+		console.log("send msg to " + JSON.stringify(roominfo) + ", "+ JSON.stringify(msg))
 		// 通知房间内的用户
 		var key = "room_" + roominfo.id
 		for (var i in this.socekts[key])
@@ -163,6 +164,7 @@ exports.Socket = {
 					room.num = game.Game.rooms[key].users.length;
 					room.title = game.Game.rooms[key].title;
 					room.gm = game.Game.rooms[key].gm;
+					room.started = game.Game.rooms[key].started;
 					res.push(room)
 				}
 				// var num = GetRandomNum(0,4)
@@ -241,6 +243,10 @@ exports.Socket = {
 				roominfo.title = game.Game.users[data.userid].name + "的房间" 
 				roominfo.users = new Array()
 				roominfo.users[0] = {id: data.userid}
+				// TODO: 测试账号
+				roominfo.users.push({id: "j1"})
+				roominfo.users.push({id: "j2"})
+				roominfo.users.push({id: "j3"})
 
 				res.roominfo = {}
 				res.roominfo.id = roominfo.id;
@@ -270,11 +276,11 @@ exports.Socket = {
 				var msg = {}
 				msg.state = "init card";
 
-				game.removeRoom(data.roomid);
+				// game.removeRoom(data.roomid);
 
 				var roominfo = game.Game.rooms[data.roomid]
 				roominfo.started = true;
-				obj.SendGameMessage(msg)
+				obj.SendGameMessage(roominfo, msg)
 			})
 		});
 	}

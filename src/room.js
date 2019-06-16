@@ -3,7 +3,7 @@ var Room = {
 	preload: function () {
 		console.log('preload');
 		game.load.image('ground', 'assets/ground.png');
-		game.load.image('room', 'assets/room.png');
+		game.load.image('room', 'assets/room_2.png');
 		game.load.image('button', 'assets/button.png');
 	},
 

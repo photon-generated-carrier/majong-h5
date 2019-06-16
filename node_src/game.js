@@ -5,9 +5,21 @@ exports.Game = {
 	mOnline : new Map, // 在线列表
 };
 
-// this.Game.users["yy"] = {}
-// this.Game.users["yy"].id = "yy"
-// this.Game.users["yy"].name = "神y"
+this.Game.users["yy"] = {}
+this.Game.users["yy"].id = "yy"
+this.Game.users["yy"].name = "神y"
+
+this.Game.users["j1"] = {}
+this.Game.users["j1"].id = "j1"
+this.Game.users["j1"].name = "机器人1号"
+
+this.Game.users["j2"] = {}
+this.Game.users["j2"].id = "j2"
+this.Game.users["j2"].name = "机器人1号"
+
+this.Game.users["j3"] = {}
+this.Game.users["j3"].id = "j3"
+this.Game.users["j3"].name = "机器人3号"
 
 exports.GetUserName = function(userid) {
 	var name;
