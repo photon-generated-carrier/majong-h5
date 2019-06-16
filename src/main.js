@@ -4,19 +4,13 @@ $(function (){
 });
 
 var urlPath = window.document.location.href;
-console.log(urlPath)
 var index = urlPath.indexOf("/", 7);
-console.log(index)
 var serverPath = urlPath.substring(0, index);
-console.log(serverPath)
-var gUser = {}
-var gGame = {};
-var gGameSocket = undefined;
+var gUser = {}  // 当前用户
+var gGame = {}; // 保存全局信息
+var gGameSocket = undefined; // 游戏中的长连接
 
-// var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game', { preload: preload, create: create, update: update });
 var game = new Phaser.Game(980, 1742, Phaser.AUTO, 'game')
-// alert(document.documentElement.clientWidth)
-// alert(document.documentElement.clientHeight)
 game.scale = Phaser.ScaleManager.SHOW_ALL
 
 game.state.add('Login', Login);
@@ -25,28 +19,36 @@ game.state.add('Game', Game);
 
 game.state.start('Login');
 
-$("#login").click(function(){
-	var socket = io.connect(serverPath);
+/*
+	login rsp = data {
+		ret,
+		id,
+		name,
+		session,
+	}
+*/
+function handleLoginRsp(data) {
+	if (data.ret == 0) {
+		// alert("登录成功！")
+		$("#loginDiv").hide()
+		gUser.id = data.id
+		gUser.name = data.name
+		SetLocal("session", data.session) // 记录session
+		game.state.start('Room');
+	} else if (data.ret == -10) {
+		// alert("已在线")
+		// $("#login").attr("data-content", "已在线") ;
+		$("#alertTxt").html("已在线") 
+		$("#myModal").modal()
+	} else {
+		$("#alertTxt").html("登陆失败")
+		$("#myModal").modal()
+	}
+}
+
+$("#login").click(function() {
 	var user = $("#user").val()
 	var pwd = $("#passwd").val()
 	console.log("longin " + user + ":" + pwd);
-	socket.emit('login req', { id: user, password: pwd});
-	socket.on('login rsp', function (data) {
-		if (data.ret == 0) {
-			// alert("登录成功！")
-			$("#loginDiv").hide()
-			gUser.id = data.id
-			gUser.name = data.name
-			game.state.start('Room');
-		} else if (data.ret == -10) {
-			// alert("已在线")
-			// $("#login").attr("data-content", "已在线") ;
-			$("#alertTxt").html("已在线") 
-			$("#myModal").modal()
-		} else {
-			$("#alertTxt").html("登陆失败")
-			$("#myModal").modal()
-		}
-		socket.disconnect();
-	})
-});
+	Socket.Login(handleLoginRsp, {id:user, password: pwd})
+})

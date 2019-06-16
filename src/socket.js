@@ -1,4 +1,13 @@
 var Socket = {
+	Login : function(handler, req) {
+		var socket = io.connect(serverPath);
+		socket.emit('login req', { id: req.id, password: req.password});
+		socket.on('login rsp', function (data) {
+			socket.disconnect();
+			handler(data)
+		});
+	},
+
 	GetRooms : function(handler, obj) {
 		var socket = io.connect(serverPath);
 		console.log("get rooms");
@@ -42,5 +51,20 @@ var Socket = {
 	OnSvrDown : function() {
 		console.log("svr down!!!!")
 		// alert("服务器断开连接。。。。")
-	}
+	},
+
+	// 尝试用session连接
+	Connect : function(handler) {
+		var session = GetLocal("session", 3600 * 24 * 1000); // 1天过期
+		if (session != undefined) {
+			var socket = io.connect(serverPath);
+			socket.emit('connect with session req', {session : session});
+			socket.on('connect with session rsp', function (data) {
+				socket.disconnect();
+				handler(data)
+			});
+		} else {
+			handler()
+		}
+	},
 }

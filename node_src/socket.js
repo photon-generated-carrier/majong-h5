@@ -1,6 +1,19 @@
 login = require("./login")
 game = require("./game")
 
+// 在线用户保活
+setInterval(function() {
+	var curTime = new Date().getTime();
+
+	for (var key in game.Game.mOnline) {
+		var user = game.Game.mOnline[key]
+		if ((curTime - user.uptime) > 240 * 1000) {
+			console.log("remove " + key + "from online list, time:" + user.uptime)
+			delete game.Game.mOnline[key];  
+		}
+	}
+}, 2000)
+
 function GetRandomNum(Min,Max) {   
 	var Range = Max - Min;   
 	var Rand = Math.random();   
@@ -29,6 +42,11 @@ exports.Socket = {
 						this.socekts[key].splice(index, 1);
 					}
 				}
+			});
+
+			socket.on('connect with session req', (data)=>{
+				console.log("connect with session req " + JSON.stringify(data));
+				login.LoginWithSession(data, socket)
 			});
 			
 			// 与客户端对应的接收指定的消息
