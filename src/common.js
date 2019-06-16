@@ -29,7 +29,7 @@ function UpdateLocalTime(key) {
 	}
 	console.log("UpdateLocal time for " + key)
 	var dataObj = JSON.parse(data);
-	SetLocal(key, dataObj.val);
+	SetLocal(key, dataObj.data);
 }
 
 // 移除缓存

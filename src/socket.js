@@ -13,7 +13,7 @@ var Socket = {
 		console.log("get rooms");
 		socket.emit('rooms req', { user : gUser.id});
 		socket.on('rooms rsp', function (data) {
-			// socket.disconnect();
+			socket.disconnect();
 			handler(data, obj)
 		})
 		

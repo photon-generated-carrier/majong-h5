@@ -14,9 +14,6 @@ var Room = {
 		this.platforms.enableBody = true;
 		this.needRefresh = true
 		Socket.GetRooms(this.handleRooms, this)
-
-		game.input.onDown.addOnce(function(){
-		})
 	},
 
 	update: function () {
@@ -27,7 +24,7 @@ var Room = {
 	needRefresh : false, // 需要定时刷新
 
 	handleRooms : function(data, obj) {
-		if (!this.needRefresh) {
+		if (!obj.needRefresh) {
 			return
 		}
 		console.log("get rooms: " + data.length);
@@ -52,7 +49,7 @@ var Room = {
 		if (obj.createButton == undefined)
 		{
 			obj.createButton = game.add.button(320, 240 * data.length + 60, 'button',null, this);
-			obj.createButton.title = game.add.text(obj.createButton.x + 40, obj.createButton.y + 30, '创建房间', { fontSize: '48px', fill: '#0AA' });
+			obj.createButton.title = game.add.text(obj.createButton.x + 60, obj.createButton.y + 30, '创建房间', { fontSize: '48px', fill: '#0AA' });
 			obj.createButton.user = gUser.id
 			obj.createButton.onInputDown.add(function(button, pointer){
 				obj.actionCreate()
@@ -63,9 +60,9 @@ var Room = {
 		}
 
 		if (obj.exitButton == undefined) {
-			obj.exitButton = game.add.button(320, obj.createButton.y + 120, 'button', null, this);
-			obj.exitButton.title = game.add.text(obj.createButton.x + 30, obj.createButton.y + 20, '当前账号:' + gUser.name + "\r\n",
-									+ "退出账号？", { fontSize: '32px', fill: '#AAA' });
+			obj.exitButton = game.add.button(328, obj.createButton.y + 175, 'button', null, this);
+			obj.exitButton.title = game.add.text(obj.exitButton.x + 30, obj.exitButton.y + 20, '当前账号:' + gUser.name + "\r\n"
+									+ "    退出账号？", { fontSize: '32px', fill: '#A22' });
 			obj.exitButton.onInputDown.add(function(button, pointer){
 				obj.actionExit()
 			}, null); 
@@ -74,9 +71,9 @@ var Room = {
 			obj.createButton.title.y = obj.createButton.y + 30
 		}
 
-		if (this.needRefresh) {
+		if (obj.needRefresh) {
 			setTimeout(function() {
-				Socket.GetRooms(this.handleRooms, this)
+				Socket.GetRooms(obj.handleRooms, obj)
 			}, 1000);
 		}
 	},
@@ -87,13 +84,13 @@ var Room = {
 			return;
 		}
 		this.needRefresh = false;
-		gGameSocket = Socket.CreateRoom(this.handleCreateRomm, gUser.id)
+		gGameSocket = Socket.CreateRoom(this.handleCreateRomm, gUser.id, this)
 	},
 
 	actionClick : function(button) {
 		console.log("room click" + button.id + " " + button.num);
 		this.needRefresh = false;
-		gGameSocket = Socket.EnterRoom(this.handleEnterRomm, button.id)
+		gGameSocket = Socket.EnterRoom(this.handleEnterRomm, button.id, this)
 	},
 
 	actionExit : function() {
@@ -104,27 +101,27 @@ var Room = {
 	},
 	
 	// 进入房间的回调
-	handleEnterRomm : function(data) {
+	handleEnterRomm : function(data, obj) {
 		console.log("enter room back");
 		if (data == undefined) {
 			console.log("enter room failed");
-			this.needRefresh = true;
-			Socket.GetRooms(this.handleRooms, this)
+			obj.needRefresh = true;
+			Socket.GetRooms(obj.handleRooms, obj)
 		}
 
-		this.EnterRoom(data)
+		obj.EnterRoom(data)
 	},
 
 	// 进入房间的回调
-	handleCreateRomm : function(data) {
+	handleCreateRomm : function(data, obj) {
 		console.log("create room back");
 		if (data == undefined) {
 			console.log("create room failed");
-			this.needRefresh = true;
-			Socket.GetRooms(this.handleRooms, this)
+			obj.needRefresh = true;
+			Socket.GetRooms(obj.handleRooms, obj)
 		}
 
-		this.EnterRoom(data)
+		obj.EnterRoom(data)
 	},
 
 	EnterRoom : function(data) {
