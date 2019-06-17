@@ -36,3 +36,23 @@ function UpdateLocalTime(key) {
 function ClearLocal(key) {
 	localStorage.removeItem(key)
 }
+
+var gDbgLvl = 2 // 0: err, 1: debug, 2: info
+
+function DEBUG_LOG(log) {
+	if (gDbgLvl >= 1) {
+		console.log(log)
+	}
+}
+
+function ERROR_LOG(log) {
+	if (gDbgLvl >= 0) {
+		console.log(log)
+	}
+}
+
+function INFO_LOG(log) {
+	if (gDbgLvl >= 3) {
+		console.log(log)
+	}
+}

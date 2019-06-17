@@ -95,13 +95,13 @@ var Room = {
 			return;
 		}
 		this.needRefresh = false;
-		gGameSocket = Socket.CreateRoom(this.handleCreateRomm, gUser.id, this)
+		Socket.CreateRoom(this.handleCreateRomm, gUser.id, this)
 	},
 
 	actionClick : function(button) {
 		console.log("room click" + button.id + " " + button.num);
 		this.needRefresh = false;
-		gGameSocket = Socket.EnterRoom(this.handleEnterRomm, button.id, this)
+		Socket.EnterRoom(this.handleEnterRomm, button.id, this)
 	},
 
 	actionExit : function() {

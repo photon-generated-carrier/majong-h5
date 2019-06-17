@@ -113,15 +113,15 @@ var Game = {
 	startButton : undefined,
 	create: function () {
 		var obj = this
-		gGameSocket.on('room users changed', function (data) {
-			console.log("user changed")
-			console.log(data)
-			gGame = data
-			obj.handleUserChanged(data)
-		})
-		gGameSocket.on('game msg', function(msg) {
-			obj.handleGameMsg(msg);
-		})
+		// Socket.socket.on('room users changed', function (data) {
+		// 	console.log("user changed")
+		// 	console.log(data)
+		// 	gGame = data
+		// 	obj.handleUserChanged(data)
+		// })
+		// Socket.socket.on('game msg', function(msg) {
+		// 	obj.handleGameMsg(msg);
+		// })
 		game.add.sprite(0, 0, 'ground');
 		this.platforms = game.add.group();
 		this.platforms.enableBody = true;
@@ -173,9 +173,8 @@ var Game = {
 		this.exitButton = game.add.button(350, 830, 'button',null, this);
 		this.exitButton.title = game.add.text(this.exitButton.x + 50, this.exitButton.y + 30, '退出房间', { fontSize: '48px', fill: '#0AA' });
 		this.exitButton.onInputDown.add(function(button, pointer){
-			console.log("退出房间")
-			// gGameSocket.disconnect();
-			Socket.LeaveRoom(gGameSocket, gGame.roominfo.id)
+			DEBUG_LOG("退出房间")
+			Socket.LeaveRoom(gGame.roominfo.id)
 			game.state.start("Room")
 		})
 
@@ -184,9 +183,9 @@ var Game = {
 
 	exitButton : undefined,
 	StartGame : function() {
-		console.log("开始游戏！");
+		DEBUG_LOG("开始游戏！");
 
-		gGameSocket.emit("start game req", {roomid: gGame.roominfo.id})
+		Socket.socket.emit("start game req", {roomid: gGame.roominfo.id})
 	},
 
 	userInfo : undefined,

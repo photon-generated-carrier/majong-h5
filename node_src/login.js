@@ -1,10 +1,21 @@
 var redis = require('redis')
 var game = require("./game")
+var log4js = require('log4js');
+var logger = log4js.getLogger();
+logger.level = 'debug';
+
+logger.LOG_DEBUG = function (filename, line, d) {
+	logger.debug("[" + filename + "][" + line + "] " + d)
+}
+
+logger.LOG_ERROR = function (filename, line, d) {
+	logger.debug("[" + filename + "][" + line + "] " + d)
+}
 
 exports.Login = function(data, socket) {
 	if (data.id == "" || data.password == "")
 	{
-		console.log('empty login info');
+		logger.LOG_DEBUG(__filename, __line, 'empty login info');
 		socket.emit('login rsp', {ret: -1})
 		socket.disconnect();
 		return
@@ -13,39 +24,38 @@ exports.Login = function(data, socket) {
 	var curTime = new Date().getTime();
 
 	// 检查在线 TODO: 先检查密码再检查在线
-	if (game.Game.mOnline[data.id] != undefined) {
-		var user = game.Game.mOnline[data.id];
-		// 存在有效的登陆信息
-		if (user.uptime != undefined && (curTime - user.uptime) < 300 * 1000) {
-			console.log(data.id + " is online");
-			socket.emit('login rsp', {ret: -10})
-			socket.disconnect();
-			return
-		}
-	}
+	// if (game.Game.mOnline[data.id] != undefined) {
+	// 	var user = game.Game.mOnline[data.id];
+	// 	// 存在有效的登陆信息
+	// 	if (user.uptime != undefined && (curTime - user.uptime) < 300 * 1000) {
+	// 		logger.LOG_DEBUG(__filename, __line, data.id + " is online");
+	// 		socket.emit('login rsp', {ret: -10})
+	// 		socket.disconnect();
+	// 		return
+	// 	}
+	// }
 
 	var client = redis.createClient(6379, '127.0.0.1')
 	client.on('error', function (err) {
-		console.log('Error ' + err);
+		logger.LOG_ERROR(__filename, __line, 'Error ' + err);
 		socket.emit('login rsp', {ret: -1})
-		socket.disconnect();
 		return
 	});
 
 	client.hget('accounts', data.id, function(err, value) {
 		if (err) {
-			console.log('Error ' + err);
+			logger.LOG_ERROR(__filename, __line, 'Error ' + err);
 			socket.emit('login rsp', {ret: -1})
 		} else {
-			console.log('Got pwd: ' + value)
+			logger.LOG_DEBUG(__filename, __line, 'Got pwd: ' + value)
 			var user = JSON.parse(value)
 		
 			if (user == undefined) {
-				console.log('用户不存在');
+				logger.LOG_DEBUG(__filename, __line, '用户不存在');
 				socket.emit('login rsp', {ret: -20})
 			} else {
 				if (data.password == user.pwd) {
-					console.log('login ok!');
+					logger.LOG_DEBUG(__filename, __line, 'login ok!');
 					// 内存记录
 					game.Game.users[data.id] = {}
 					game.Game.users[data.id].id = data.id
@@ -62,20 +72,19 @@ exports.Login = function(data, socket) {
 
 					socket.emit('login rsp', {ret: 0, id:data.id, name:user.name, session:session})
 				} else {
-					console.log('login failed!');
+					logger.LOG_ERROR(__filename, __line, 'login failed!');
 					socket.emit('login rsp', {ret: -1})
 				}
 			}
 		}
 		client.quit();
-		socket.disconnect();
 	})
 }
 
 exports.LoginWithSession = function(data, socket) {
 	if (data == undefined || data.session == undefined || data.session.length < 9)
 	{
-		console.log('empty login session');
+		logger.LOG_DEBUG(__filename, __line, 'empty login session');
 		socket.emit('connect with session rsp', {ret: -1})
 		socket.disconnect();
 		return
@@ -85,7 +94,7 @@ exports.LoginWithSession = function(data, socket) {
 	var session = data.session
 	var arr = session.split(":")
 	if (arr.length < 3) {
-		console.log('empty login session');
+		logger.LOG_DEBUG(__filename, __line, 'empty login session');
 		socket.emit('connect with session rsp', {ret: -1})
 		socket.disconnect();
 		return
@@ -98,7 +107,7 @@ exports.LoginWithSession = function(data, socket) {
 	if (game.Game.mOnline[userid] != undefined) {
 		var user = game.Game.mOnline[userid];
 		if (session != user.session) {
-			console.log(userid + " is online, get s:" + session + "actural s:" + user.session);
+			logger.LOG_DEBUG(__filename, __line, userid + " is online, get s:" + session + "actural s:" + user.session);
 			socket.emit('connect with session rsp', {ret: -10})
 			socket.disconnect();
 			return
@@ -117,7 +126,7 @@ exports.LoginWithSession = function(data, socket) {
 		return
 	}
 
-	console.log('login with session failed!');
+	logger.LOG_DEBUG(__filename, __line, 'login with session failed!');
 	socket.emit('connect with session rsp', {ret: -1})
 	socket.disconnect();
 	return
