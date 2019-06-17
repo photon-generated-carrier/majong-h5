@@ -7,6 +7,10 @@ logger.LOG_DEBUG = function (filename, line, d) {
 	logger.debug("[" + filename + "][" + line + "] " + d)
 }
 
+logger.LOG_ERROR = function (filename, line, d) {
+	logger.debug("[" + filename + "][" + line + "] " + d)
+}
+
 // 在线用户保活踢出
 setInterval(function() {
 	var curTime = new Date().getTime();
@@ -145,36 +149,38 @@ exports.Socket = {
 	},
 	bind: function() {
 		var obj = this
-		io.on('connection',  (socket)=>{
-			// console.log('client connect server, ok!');
-		 
-			// 监听断开连接状态：socket的disconnect事件表示客户端与服务端断开连接
-			// socket.on('disconnect', ()=>{
-			// //   console.log('connect disconnect');
-			// 	socket.disconnect();
-			// 	// 从列表中移除
-			// 	for(var key in this.socekts) {
-			// 		var index = this.socekts[key].indexOf(socket);
-			// 		if (index > -1) {
-			// 			console.log("remove from " + key)
-			// 			this.socekts[key].splice(index, 1);
-			// 		}
-			// 	}
-			// });
+		io.of("/login").on('connection',  (socket)=>{
+			logger.LOG_DEBUG(__filename, __line, 'client connect server /login, ok!');
 
-			socket.on('connect with session req', (data)=>{
-				logger.LOG_DEBUG(__filename, __line, "connect with session req " + JSON.stringify(data));
-				login.LoginWithSession(data, socket)
-			});
-			
-			// 与客户端对应的接收指定的消息
+			// 用户名密码登陆
 			socket.on('login req', (data)=>{
 				logger.LOG_DEBUG(__filename, __line, "login req: " + JSON.stringify(data));
 				login.Login(data, socket)
 			});
 
+			// session登陆
+			socket.on('connect with session req', (data, callback)=>{
+				logger.LOG_DEBUG(__filename, __line, "connect with session req " + JSON.stringify(data));
+				let res = login.LoginWithSession(data)
+				callback(res)
+			});
+		})
+
+		io.on('connection',  (socket)=>{
+			logger.LOG_DEBUG(__filename, __line, 'client connect server, ok!');
+		 
+			socket.on('disconnect', ()=>{
+				logger.LOG_DEBUG('connect disconnect');
+				// 处理掉线
+			});
+
+			
+			
+			// 与客户端对应的接收指定的消息
+			
+
 			socket.on('rooms req', (data)=>{
-				// console.log("rooms req: " + JSON.stringify(data));
+				console.log("rooms req: " + JSON.stringify(data));
 				var res = new Array()
 				for (var key in game.Game.rooms) {
 					var room = {};
@@ -201,21 +207,22 @@ exports.Socket = {
 		})
 
 		// 保活
-		io.of('/keepalive').on('connection', socket => {
-			// 保活
-			socket.on('keepalive', (data)=>{
-				logger.LOG_DEBUG(__filename, __line, 'keepalive:' + data.session)
-				var rsp = {ret: 0}
-				if (game.GetSessionInfo(data.session) == undefined) {
-					// 服务器down了
-					logger.LOG_DEBUG(__filename, __line, 'keepalive failed')
-					rsp.ret = -10;
-				} else {
-					game.UpdateAlive(data)
-				}
-				socket.emit('keepalive rsp', rsp)
-			})
-		})
+		// io.of('/keepalive').on('connection', socket => {
+		// 	// 保活
+		// 	socket.on('keepalive', (data)=>{
+		// 		logger.LOG_DEBUG(__filename, __line, 'keepalive:' + data.session)
+		// 		var rsp = {ret: 0}
+		// 		if (game.GetSessionInfo(data.session) == undefined) {
+		// 			// 服务器down了
+		// 			logger.LOG_DEBUG(__filename, __line, 'keepalive failed')
+		// 			rsp.ret = -10;
+		// 		} else {
+		// 			logger.LOG_DEBUG(__filename, __line, 'keepalive succ......')
+		// 			game.UpdateAlive(data)
+		// 		}
+		// 		socket.emit('keepalive rsp', rsp)
+		// 	})
+		// })
 
 		// 游戏长连接
 		io.of('/game').on('connection', socket => {

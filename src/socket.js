@@ -1,79 +1,81 @@
 var Socket = {
+	socket : undefined,
+	CreateSocket : function() {
+		if (this.socket == undefined) {
+			this.socket = io.connect(serverPath + "/login", {reconnect:true, 'connect timeout': 200, reconnection: 1000});
+		}
+	},
 	Login : function(handler, req) {
-		var socket = io.connect(serverPath);
-		socket.emit('login req', { id: req.id, password: req.password});
-		socket.on('login rsp', function (data) {
-			socket.disconnect();
+		this.CreateSocket()
+		DEBUG_LOG("login req:" + JSON.stringify(req))
+		this.socket.emit('login req', { id: req.id, password: req.password})
+		var obj = this
+		this.socket.once('login rsp', (data) => {
+			INFO_LOG("login rsp:" + JSON.stringify(data))
+			if (data.ret != 0) {
+				obj.socket.disconnect()
+				obj.socket = undefined
+			}
 			handler(data)
 		});
-	},
-
-	GetRooms : function(handler, obj) {
-		var socket = io.connect(serverPath);
-		console.log("get rooms");
-		socket.emit('rooms req', { user : gUser.id});
-		socket.on('rooms rsp', function (data) {
-			socket.disconnect();
-			handler(data, obj)
-		})
-		
-		return socket;
-	},
-
-	EnterRoom : function(handler, roomId, obj) {
-		var socket = io.connect(serverPath + "/game");
-		console.log("enter rooms:" + roomId);
-		socket.emit('enter room req', { user : gUser.id, roomid : roomId});
-		socket.on('enter room rsp', function (data) {
-			handler(data, obj)
-		})
-		// var my = this;
-		// socket.on('disconnect', function (data) {
-		// 	my.OnSvrDown();
-		// })
-		return socket
-	},
-
-	CreateRoom : function(handler, userid, obj) {
-		var socket = io.connect(serverPath + "/game");
-		console.log("create room:" + userid);
-		socket.emit('create room req', { userid : gUser.id });
-		socket.on('create room rsp', function (data) {
-			handler(data, obj)
-		})
-		// var my = this;
-		// socket.on('disconnect', function (data) {
-		// 	my.OnSvrDown();
-		// })
-		return socket
-	}, 
-
-	OnSvrDown : function() {
-		console.log("svr down!!!!")
-		// alert("服务器断开连接。。。。")
 	},
 
 	// 尝试用session连接
 	Connect : function(handler) {
 		var session = GetLocal("session", 3600 * 24 * 1000); // 1天过期
+		DEBUG_LOG("connect:" + session);
 		if (session != undefined) {
-			var socket = io.connect(serverPath);
-			socket.emit('connect with session req', {session : session});
-			socket.on('connect with session rsp', function (data) {
-				socket.disconnect();
+			this.CreateSocket()
+			this.socket.emit('connect with session req', {session : session}, (data) => {
+				INFO_LOG("connect rsp:" + JSON.stringify(data))
 				handler(data)
 			});
 		} else {
+			DEBUG_LOG("connect failed, no session");
 			handler()
 		}
 	},
 
+	GetRooms : function(handler, obj) {
+		DEBUG_LOG("get rooms:" + gUser.id);
+		this.socket.emit('rooms req', { user : gUser.id}, (data) => {
+			INFO_LOG("rooms rsp:" + JSON.stringify(data))
+			handler(data, obj)
+		});
+	},
+
+	EnterRoom : function(handler, roomId, obj) {
+		DEBUG_LOG("enter rooms:" + roomId);
+		this.socket.emit('enter room req', { user : gUser.id, roomid : roomId}, (data) => {
+			INFO_LOG("enter rsp:" + JSON.stringify(data))
+			handler(data, obj)
+		})
+	},
+
+	CreateRoom : function(handler, userid, obj) {
+		DEBUG_LOG("create room:" + userid);
+		this.socket.emit('create room req', { userid : gUser.id }, (data) => {
+			INFO_LOG("create room rsp:" + JSON.stringify(data))
+			handler(data, obj)
+		})
+	}, 
+
 	// 通知账号退出
 	NotifyAccountExit : function(userid) {
-		var socket = io.connect(serverPath);
-		console.log("account exit:" + userid);
-		socket.emit('notify account exit', { userid : userid });
-		// socket.disconnect()
+		DEBUG_LOG.log("account exit:" + userid);
+		// this.socket.emit('notify account exit', { userid : userid });
+		this.socket.disconnect();
+		this.socket = undefined;
+	},
+
+	LeaveRoom : function(roomid) {
+		DEBUG_LOG.log("leave room:" + {userid: gUser.id, roomid:roomid})
+		this.socket.emit("leave room", {userid: gUser.id, roomid:roomid})
+	},
+
+	OnSvrDown : function() {
+		console.log("svr down!!!!")
+		// alert("服务器断开连接。。。。")
 	},
 
 	alive : false,
@@ -106,15 +108,6 @@ var Socket = {
 		});
 
 		UpdateLocalTime("session")
-	},
-
-	LeaveRoom : function(eGameSocket, roomid) {
-		if (eGameSocket == undefined || roomid == undefined) {
-			return
-		}
-		eGameSocket.emit("leave room", {userid: gUser.id, roomid:roomid})
-		// eGameSocket.disconnect();
-		eGameSocket = undefined;
 	},
 }
 
