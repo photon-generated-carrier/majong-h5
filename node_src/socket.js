@@ -164,23 +164,10 @@ exports.Socket = {
 				let res = login.LoginWithSession(data)
 				callback(res)
 			});
-		})
 
-		io.on('connection',  (socket)=>{
-			logger.LOG_DEBUG(__filename, __line, 'client connect server, ok!');
-		 
-			socket.on('disconnect', ()=>{
-				logger.LOG_DEBUG('connect disconnect');
-				// 处理掉线
-			});
-
-			
-			
-			// 与客户端对应的接收指定的消息
-			
-
-			socket.on('rooms req', (data)=>{
-				console.log("rooms req: " + JSON.stringify(data));
+			// 房间列表
+			socket.on('rooms req', (data, callback)=>{
+				logger.LOG_DEBUG(__filename, __line, "rooms req: " + JSON.stringify(data));
 				var res = new Array()
 				for (var key in game.Game.rooms) {
 					var room = {};
@@ -191,19 +178,59 @@ exports.Socket = {
 					room.started = game.Game.rooms[key].started;
 					res.push(room)
 				}
-				// var num = GetRandomNum(0,4)
-				// for (var i = 0; i < num; i++) {
-				// 	res[i] = {id:1, num :GetRandomNum(0,4)}
-				// }
-				socket.emit('rooms rsp', res)
+				callback(res)
 			})
 
-			// 账号退出
-			socket.on('notify account exit', (data)=>{
-				logger.LOG_DEBUG(__filename, __line, 'notify account exit:' + data.userid)
-				delete game.Game.mOnline[data.userid];
-				socket.disconnect()
+			// 创建房间
+			socket.on('create room req', (data, callback)=>{
+				logger.LOG_DEBUG(__filename, __line, "create room req: " + JSON.stringify(data));
+				var roomid = Math.floor(new Date().getTime() / 1000);
+				logger.LOG_DEBUG(__filename, __line, roomid)
+				var res = {};
+				res.users = new Array() // user列表
+				
+				game.Game.rooms[roomid] = {}
+				var roominfo = game.Game.rooms[roomid]
+				roominfo.id = roomid;
+				roominfo.gm = data.userid;
+				roominfo.title = game.Game.users[data.userid].name + "的房间" 
+				roominfo.users = new Array()
+				roominfo.users[0] = {id: data.userid}
+				// TODO: 测试账号
+				roominfo.users.push({id: "j1"})
+				roominfo.users.push({id: "j2"})
+				// roominfo.users.push({id: "j3"})
+
+				res.roominfo = {}
+				res.roominfo.id = roominfo.id;
+				res.roominfo.gm = roominfo.gm;
+
+				logger.LOG_DEBUG(__filename, __line, "game status: " + JSON.stringify(game.Game));
+
+				for (i = 0; i < roominfo.users.length; i++)
+				{
+					res.users[i] = game.Game.users[roominfo.users[i].id];
+				}
+
+				// 记录连接
+				var key = "room_" + roomid
+				obj.socekts[key] = new Array;
+
+				socket.userid = data.userid
+				socket.roomid = roominfo.id
+
+				obj.socekts[key].push(socket)
+				callback(res)
 			})
+		})
+
+		io.on('connection',  (socket)=>{
+			logger.LOG_DEBUG(__filename, __line, 'client connect server, ok!');
+		 
+			socket.on('disconnect', (reason)=>{
+				logger.LOG_DEBUG(__filename, __line, 'connect disconnect:' + reason);
+				// 处理掉线
+			});
 		})
 
 		// 保活
@@ -252,48 +279,6 @@ exports.Socket = {
 				socket.roomid = data.roomid
 				obj.socekts[key].push(socket)
 				socket.emit('enter room rsp', res)
-			})
-
-			socket.on('create room req', (data)=>{
-				logger.LOG_DEBUG(__filename, __line, "create room req: " + JSON.stringify(data));
-				var roomid = Math.floor(new Date().getTime() / 1000);
-				logger.LOG_DEBUG(__filename, __line, roomid)
-				var res = {};
-				res.users = new Array() // user列表
-				
-				game.Game.rooms[roomid] = {}
-				var roominfo = game.Game.rooms[roomid]
-				roominfo.id = roomid;
-				roominfo.gm = data.userid;
-				roominfo.title = game.Game.users[data.userid].name + "的房间" 
-				roominfo.users = new Array()
-				roominfo.users[0] = {id: data.userid}
-				// TODO: 测试账号
-				roominfo.users.push({id: "j1"})
-				roominfo.users.push({id: "j2"})
-				// roominfo.users.push({id: "j3"})
-
-				res.roominfo = {}
-				res.roominfo.id = roominfo.id;
-				res.roominfo.gm = roominfo.gm;
-
-				logger.LOG_DEBUG(__filename, __line, "game status: " + JSON.stringify(game.Game));
-
-				for (i = 0; i < roominfo.users.length; i++)
-				{
-					res.users[i] = game.Game.users[roominfo.users[i].id];
-				}
-
-				// 记录连接
-				var key = "room_" + roomid
-				obj.socekts[key] = new Array;
-
-				socket.userid = data.userid
-				socket.roomid = roominfo.id
-
-				obj.socekts[key].push(socket)
-				socket.emit('create room rsp', res)
-
 			})
 
 			socket.on('start game req', (data)=>{

@@ -7,11 +7,11 @@ var Socket = {
 	},
 	Login : function(handler, req) {
 		this.CreateSocket()
-		DEBUG_LOG("login req:" + JSON.stringify(req))
+		LOG_DEBUG("login req:" + JSON.stringify(req))
 		this.socket.emit('login req', { id: req.id, password: req.password})
 		var obj = this
 		this.socket.once('login rsp', (data) => {
-			INFO_LOG("login rsp:" + JSON.stringify(data))
+			LOG_INFO("login rsp:" + JSON.stringify(data))
 			if (data.ret != 0) {
 				obj.socket.disconnect()
 				obj.socket = undefined
@@ -23,53 +23,53 @@ var Socket = {
 	// 尝试用session连接
 	Connect : function(handler) {
 		var session = GetLocal("session", 3600 * 24 * 1000); // 1天过期
-		DEBUG_LOG("connect:" + session);
+		LOG_DEBUG("connect:" + session);
 		if (session != undefined) {
 			this.CreateSocket()
 			this.socket.emit('connect with session req', {session : session}, (data) => {
-				INFO_LOG("connect rsp:" + JSON.stringify(data))
+				LOG_INFO("connect rsp:" + JSON.stringify(data))
 				handler(data)
 			});
 		} else {
-			DEBUG_LOG("connect failed, no session");
+			LOG_DEBUG("connect failed, no session");
 			handler()
 		}
 	},
 
-	GetRooms : function(handler, obj) {
-		DEBUG_LOG("get rooms:" + gUser.id);
+	GetRooms : function() {
+		LOG_DEBUG("get rooms:" + gUser.id);
 		this.socket.emit('rooms req', { user : gUser.id}, (data) => {
-			INFO_LOG("rooms rsp:" + JSON.stringify(data))
-			handler(data, obj)
+			LOG_INFO("rooms rsp:" + JSON.stringify(data))
+			Room.data = data;
 		});
 	},
 
 	EnterRoom : function(handler, roomId, obj) {
-		DEBUG_LOG("enter rooms:" + roomId);
+		LOG_DEBUG("enter rooms:" + roomId);
 		this.socket.emit('enter room req', { user : gUser.id, roomid : roomId}, (data) => {
-			INFO_LOG("enter rsp:" + JSON.stringify(data))
+			LOG_INFO("enter rsp:" + JSON.stringify(data))
 			handler(data, obj)
 		})
 	},
 
 	CreateRoom : function(handler, userid, obj) {
-		DEBUG_LOG("create room:" + userid);
+		LOG_DEBUG("create room:" + userid);
 		this.socket.emit('create room req', { userid : gUser.id }, (data) => {
-			INFO_LOG("create room rsp:" + JSON.stringify(data))
+			LOG_INFO("create room rsp:" + JSON.stringify(data))
 			handler(data, obj)
 		})
 	}, 
 
 	// 通知账号退出
 	NotifyAccountExit : function(userid) {
-		DEBUG_LOG.log("account exit:" + userid);
+		LOG_DEBUG("account exit:" + userid);
 		// this.socket.emit('notify account exit', { userid : userid });
 		this.socket.disconnect();
 		this.socket = undefined;
 	},
 
 	LeaveRoom : function(roomid) {
-		DEBUG_LOG.log("leave room:" + {userid: gUser.id, roomid:roomid})
+		LOG_DEBUG("leave room:" + {userid: gUser.id, roomid:roomid})
 		this.socket.emit("leave room", {userid: gUser.id, roomid:roomid})
 	},
 
@@ -80,34 +80,34 @@ var Socket = {
 
 	alive : false,
 	KeepAlive : function() {
-		console.log("keep alive....");
-		this.alive = false; // 保活状态
-		socketAlive = io.connect(serverPath + "/keepalive", {reconnect:false,  'connect timeout': 100});
-		socketAlive.emit("keepalive", {userid: gUser.id, session: GetLocal("session")})
-		var obj = this;
-		socketAlive.on('keepalive rsp', function(rsp) {
-			if (rsp.ret == 0) {
-				console.log("keep alive succ........");
-				obj.alive = true;
-				gAliveTime = new Date().getTime()
-			} else {
-				console.log("server restarted....");
-				clearInterval(gAliveId);
-				Room.needRefresh = false;
-				game.state.start("Login");
-			}
-		})
+		// console.log("keep alive....");
+		// this.alive = false; // 保活状态
+		// socketAlive = io.connect(serverPath + "/keepalive", {reconnect:false,  'connect timeout': 100});
+		// socketAlive.emit("keepalive", {userid: gUser.id, session: GetLocal("session")})
+		// var obj = this;
+		// socketAlive.on('keepalive rsp', function(rsp) {
+		// 	if (rsp.ret == 0) {
+		// 		console.log("keep alive succ........");
+		// 		obj.alive = true;
+		// 		gAliveTime = new Date().getTime()
+		// 	} else {
+		// 		console.log("server restarted....");
+		// 		clearInterval(gAliveId);
+		// 		Room.needRefresh = false;
+		// 		game.state.start("Login");
+		// 	}
+		// })
 
-		socketAlive.on('connect_error', function(data){
-			console.log("keepalive" + ' - connect_error');
-			socketAlive.disconnect();
-		});
-		socketAlive.on('connect_timeout', function(data){
-			console.log("keepalive" + ' - connect_timeout');
-			socketAlive.disconnect();
-		});
+		// socketAlive.on('connect_error', function(data){
+		// 	console.log("keepalive" + ' - connect_error');
+		// 	socketAlive.disconnect();
+		// });
+		// socketAlive.on('connect_timeout', function(data){
+		// 	console.log("keepalive" + ' - connect_timeout');
+		// 	socketAlive.disconnect();
+		// });
 
-		UpdateLocalTime("session")
+		// UpdateLocalTime("session")
 	},
 }
 

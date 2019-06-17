@@ -22,10 +22,10 @@ var Login = {
 
 	handleConnectRsp: function(rsp) {
 		if (rsp == undefined || rsp.ret != 0) {
-			console.log("need login")
+			LOG_ERROR("need login")
 			$("#loginDiv").show()
 		} else {
-			console.log("reconnected")
+			LOG_DEBUG("reconnected:" + JSON.stringify(rsp))
 			// 获取必要信息
 			gUser.id = rsp.id
 			gUser.name = rsp.name

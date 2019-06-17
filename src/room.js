@@ -1,7 +1,7 @@
 
 var Room = {
 	preload: function () {
-		console.log('preload');
+		LOG_DEBUG('preload');
 		game.load.image('ground', 'assets/ground.png');
 		game.load.image('room', 'assets/room_2.png');
 		game.load.image('button', 'assets/button.png');
@@ -19,26 +19,35 @@ var Room = {
 			this.exitButton = undefined
 		}
 
-		console.log('create');
+		LOG_DEBUG('create');
 		game.add.sprite(0, 0, 'ground');
 		this.platforms = game.add.group();
 		this.platforms.enableBody = true;
 		this.needRefresh = true
-		Socket.GetRooms(this.handleRooms, this)
+		Socket.GetRooms()
+		this.intervalId = setInterval(function() {
+			Socket.GetRooms()
+		}, 2000);
 	},
 
+	intervalId : undefined,
+	data : {}, 
 	update: function () {
+		this.handleRooms()
 	},
 	buttons : new Array,
 	createButton : undefined, // 创建房间
 	exitButton : undefined,	// 退出账号
-	needRefresh : false, // 需要定时刷新
+	needRefresh : false, // 需要刷新
 
-	handleRooms : function(data, obj) {
+	handleRooms : function() {
+		let data = this.data
+		let obj = this
 		if (!obj.needRefresh) {
 			return
 		}
-		console.log("get rooms: " + data.length);
+
+		LOG_INFO("get rooms: " + data.length);
 		for ( i = 0; i < obj.buttons.length; i++)
 		{
 			obj.buttons[i].title.kill()
@@ -46,9 +55,8 @@ var Room = {
 		}
 		obj.buttons = [];
 		for ( var i = 0; i < data.length; i++) {
-			console.log("room:" + data[i].id + " num:" + data[i].num);
+			LOG_INFO("room:" + data[i].id + " num:" + data[i].num);
 			obj.buttons[i] = game.add.button(0, 240 * i + 50, 'room', null, this);
-			// obj.buttons[i].scale.setTo(3.7, 1)
 			obj.buttons[i].id = data[i].id;
 			obj.buttons[i].num = data[i].num;
 			obj.buttons[i].title = game.add.text(obj.buttons[i].x + 300, obj.buttons[i].y + 40, data[i].title + "\r\n" + data[i].num + "/4", { fontSize: '64px', fill: '#0A0' });
@@ -81,17 +89,11 @@ var Room = {
 			obj.exitButton.y = obj.createButton.y + 175;
 			obj.exitButton.title.y = obj.exitButton.y + 20
 		}
-
-		if (obj.needRefresh) {
-			setTimeout(function() {
-				Socket.GetRooms(obj.handleRooms, obj)
-			}, 1000);
-		}
 	},
 
 	actionCreate : function() {
 		if (gUser.id == undefined) {
-			console.log("gUser.id is null, 请刷新")
+			LOG_ERROR("gUser.id is null, 请刷新")
 			return;
 		}
 		this.needRefresh = false;
@@ -109,6 +111,7 @@ var Room = {
 		this.needRefresh = false;
 		ClearLocal("session")
 		Socket.NotifyAccountExit(gUser.id);
+		clearInterval(this.intervalId)
 		game.state.start("Login")
 	},
 	
@@ -139,6 +142,7 @@ var Room = {
 	EnterRoom : function(data) {
 		console.log("Enter room with:" + JSON.stringify(data));
 		gGame = data;
+		clearInterval(this.intervalId)
 		game.state.start('Game');
 	}
 }

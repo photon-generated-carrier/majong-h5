@@ -121,6 +121,8 @@ exports.LoginWithSession = function(data, socket) {
 
 		logger.LOG_DEBUG(__filename, __line, 'login with session succ!');
 		res.ret = 0;
+		res.id = userid;
+		res.name = name;
 		return res
 	}
 
