@@ -180,3 +180,52 @@ exports.HandleDisconnect = function(userid, status) {
 	this.Game.mOffline[userid].uptime = new Date().getTime()
 	delete this.Game.mOnline[userid]
 }
+
+// 创建房间，返回roominfo
+exports.CreateRoom = function(userid) {
+	var roomid = "room:" + userid + ":" + Math.floor(new Date().getTime() / 1000);
+	logger.LOG_DEBUG(__filename, __line, "crate room: " + roomid);
+
+	this.Game.users[userid].room = roomid // 加入房间
+
+	this.Game.rooms[roomid] = {}
+	var roominfo = this.Game.rooms[roomid]
+	roominfo.id = roomid;
+	roominfo.gm = userid;
+	roominfo.title = this.Game.users[userid].name + "的房间" 
+	roominfo.users = new Array()
+	roominfo.users[0] = {id: userid}
+
+	// TODO: 测试账号
+	roominfo.users.push({id: "j1"})
+	roominfo.users.push({id: "j2"})
+	// roominfo.users.push({id: "j3"})
+
+	return roominfo
+}
+
+exports.EnterRoom = function(userid, roomid) {
+	var res = {ret : 0}
+	if (userid == undefined || roomid == undefined) {
+		res.ret = -1
+		return res
+	}
+	var roominfo = this.Game.rooms[roomid]
+	if (roominfo == undefined) {
+		res.ret = -1
+		return res
+	}
+	
+	roominfo.users.push({id: userid})
+
+	res.roominfo = {}
+	res.roominfo.id = roominfo.id;
+	res.roominfo.gm = roominfo.gm;
+	res.users = []
+	for (i = 0; i < roominfo.users.length; i++)
+	{
+		res.users[i] = this.Game.users[roominfo.users[i].id];
+	}
+
+	return res
+}

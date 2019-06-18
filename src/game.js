@@ -7,6 +7,10 @@ var Game = {
 		game.load.spritesheet('card', 'assets/majong.png', 196, 256);
 	},
 
+	update: function() {
+		this.handleUserChanged(gGame)
+	},
+
 	/*
 	11 ~ 19: 万
 	21 ~ 29: 条
@@ -113,12 +117,12 @@ var Game = {
 	startButton : undefined,
 	create: function () {
 		var obj = this
-		// Socket.socket.on('room users changed', function (data) {
-		// 	console.log("user changed")
-		// 	console.log(data)
-		// 	gGame = data
-		// 	obj.handleUserChanged(data)
-		// })
+		Socket.socket.on('room users changed', function (data) {
+			console.log("user changed")
+			console.log(data)
+			gGame = data
+			// obj.handleUserChanged(data)
+		})
 		// Socket.socket.on('game msg', function(msg) {
 		// 	obj.handleGameMsg(msg);
 		// })

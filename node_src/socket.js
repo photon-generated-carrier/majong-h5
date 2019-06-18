@@ -23,32 +23,6 @@ function GetRandomNum(Min,Max) {
 
 exports.Socket = {
 	io : {},
-	socekts : new Map,
-
-	// 向房间发送notify
-	NotifyUserChange : function(roominfo) {
-		// 通知
-		var res = {};
-		res.users = new Array() // user列表
-	
-		res.roominfo = {}
-		res.roominfo.id = roominfo.id;
-		res.roominfo.gm = roominfo.gm;
-		for (i = 0; i < roominfo.users.length; i++)
-		{
-			res.users[i] = game.Game.users[roominfo.users[i].id];
-		}
-	
-		// 通知房间内的用户
-		var key = "room_" + roominfo.id
-		for (var i in this.socekts[key])
-		{
-			logger.LOG_DEBUG(__filename, __line, "notify user changed to:" + this.socekts[key][i].id + ", " + JSON.stringify(res))
-			this.socekts[key][i].emit('room users changed', res)
-		}
-
-		return res
-	},
 	
 	// 向房间发送游戏消息
 	SendGameMessage : function (roominfo, msg) {
@@ -130,7 +104,7 @@ exports.Socket = {
 
 			// 通知
 			logger.LOG_DEBUG(__filename, __line, roominfo)
-			this.NotifyUserChange(roominfo)
+			// this.NotifyUserChange(roominfo)
 		}
 		socket.disconnect();
 	},
@@ -177,7 +151,6 @@ exports.Socket = {
 
 			// 包活 (客户断收到pong)
 			socket.on('pongs', () => {
-				console.log(socket)
 				if (socket.my != undefined && socket.my.userid != undefined) {
 					logger.LOG_INFO(__filename, __line, 'recv pongs from: ' + socket.my.userid);
 					game.UpdateOnline(socket.my.userid)
@@ -185,7 +158,6 @@ exports.Socket = {
 			})
 
 			socket.on('reconnect_attempt', (times) => {
-				console.log(socket)
 				if (socket.my != undefined) {
 					logger.LOG_DEBUG(__filename, __line, 'reconncet [' + times + '] to ' + socket.my.userid);
 					game.Game.mOnline[socket.my.userid].re_time = times;
@@ -209,7 +181,7 @@ exports.Socket = {
 
 			// 房间列表
 			socket.on('rooms req', (data, callback)=>{
-				logger.LOG_DEBUG(__filename, __line, "rooms req: " + JSON.stringify(data));
+				logger.LOG_INFO(__filename, __line, "rooms req: " + JSON.stringify(data));
 				var res = new Array()
 				for (var key in game.Game.rooms) {
 					var room = {};
@@ -226,28 +198,14 @@ exports.Socket = {
 			// 创建房间
 			socket.on('create room req', (data, callback)=>{
 				logger.LOG_DEBUG(__filename, __line, "create room req: " + JSON.stringify(data));
-				var roomid = Math.floor(new Date().getTime() / 1000);
-				logger.LOG_DEBUG(__filename, __line, roomid)
+				
 				var res = {};
 				res.users = new Array() // user列表
 				
-				game.Game.rooms[roomid] = {}
-				var roominfo = game.Game.rooms[roomid]
-				roominfo.id = roomid;
-				roominfo.gm = data.userid;
-				roominfo.title = game.Game.users[data.userid].name + "的房间" 
-				roominfo.users = new Array()
-				roominfo.users[0] = {id: data.userid}
-				// TODO: 测试账号
-				roominfo.users.push({id: "j1"})
-				roominfo.users.push({id: "j2"})
-				// roominfo.users.push({id: "j3"})
-
+				var roominfo = game.CreateRoom(data.userid)
 				res.roominfo = {}
 				res.roominfo.id = roominfo.id;
 				res.roominfo.gm = roominfo.gm;
-
-				logger.LOG_DEBUG(__filename, __line, "game status: " + JSON.stringify(game.Game));
 
 				for (i = 0; i < roominfo.users.length; i++)
 				{
@@ -255,21 +213,35 @@ exports.Socket = {
 				}
 
 				// 记录连接
-				var key = "room_" + roomid
-				obj.socekts[key] = new Array;
+				socket.join(roominfo.id)
+				socket.my.roomid = roominfo.id
 
-				socket.userid = data.userid
-				socket.roomid = roominfo.id
+				callback(res)
+			})
 
-				obj.socekts[key].push(socket)
+			socket.on('enter room req', (data, callback)=>{
+				logger.LOG_DEBUG(__filename, __line, "enter room req: " + JSON.stringify(data));
+
+				// 加入
+				var res = game.EnterRoom(data.user, data.roomid)
+				if (res.ret != 0) {
+					res.ret = -1;
+					callback(res)
+					return
+				}
+
+				// 通知房间内的用户
+				logger.LOG_DEBUG(__filename, __line, "notify user changed to:" + data.roomid + ", " + JSON.stringify(res))
+				socket.to(data.roomid).emit("room users changed", res)
+
+				socket.join(data.roomid)
+				socket.my.roomid =data.roomid
 				callback(res)
 			})
 		})
 
 		io.on('connection',  (socket)=>{
 			logger.LOG_DEBUG(__filename, __line, 'client connect server, ok!');
-		 
-			
 		})
 
 		// 游戏长连接
@@ -286,21 +258,7 @@ exports.Socket = {
 				obj.handleLeave(socket, data)
 			})
 
-			socket.on('enter room req', (data)=>{
-				logger.LOG_DEBUG(__filename, __line, "enter room req: " + JSON.stringify(data));
-
-				// 加入
-				var roominfo = game.Game.rooms[data.roomid]
-				roominfo.users.push({id: data.user})
-
-				// 通知房间内的用户
-				var res = obj.NotifyUserChange(roominfo)
-				var key = "room_" + roominfo.id
-				socket.userid = data.user
-				socket.roomid = data.roomid
-				obj.socekts[key].push(socket)
-				socket.emit('enter room rsp', res)
-			})
+			
 
 			socket.on('start game req', (data)=>{
 				logger.LOG_DEBUG(__filename, __line, 'start game req ' + data.roomid)
