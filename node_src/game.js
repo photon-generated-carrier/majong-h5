@@ -1,9 +1,12 @@
 
+var logger = require("./mylogger")
+
 exports.Game = {
 	rooms : new Map, // {id, gm, started, title, users}
 	users : new Map,
 	mSession : new Map, // 连接列表
 	mOnline : new Map, // 在线列表
+	mOffline : new Map, // 掉线列表，用来断线重连
 	games : new Map, // roomid -> {users:{id, cards:[]}, cards:{}}
 
 	ShuffleSwap : function(arr) {
@@ -91,25 +94,25 @@ exports.GetUserName = function(userid) {
 
 exports.UpdateSession = function(session) {
 	if (session == undefined) {
-		console.log("can't set undefined session")
+		logger.LOG_ERROR(__filename, __line, "can't set undefined session")
 		return
 	}
 
 	var curTime = new Date().getTime();
-	if (game.Game.mSession[session]  == undefined) {
-		game.Game.mSession[session] = {}
+	if (this.Game.mSession[session]  == undefined) {
+		this.Game.mSession[session] = {}
 	}
-	game.Game.mSession[session].uptime = curTime
+	this.Game.mSession[session].uptime = curTime
 }
 
 // exp:3600 * 24 * 1000
 exports.GetSessionInfo = function(session, exp) {
 	var curTime = new Date().getTime();
 	if (exp == undefined) { exp = 3600 * 24 * 1000 }
-	if (game.Game.mSession[session] != undefined &&
-		game.Game.mSession[session].uptime != undefined &&
-		(curTime - game.Game.mSession[session].uptime) < exp) {
-		return game.Game.mSession[session]
+	if (this.Game.mSession[session] != undefined &&
+		this.Game.mSession[session].uptime != undefined &&
+		(curTime - this.Game.mSession[session].uptime) < exp) {
+		return this.Game.mSession[session]
 	}
 	
 	return undefined
@@ -119,15 +122,15 @@ exports.UpdateOnline = function(userid, session) {
 	var curTime = new Date().getTime();
 
 	if (userid == undefined) {
-		console.log("can't set undefined Online")
+		logger.LOG_ERROR(__filename, __line, "can't set undefined Online")
 		return
 	}
 
-	if (game.Game.mOnline[userid] == undefined) {
-		game.Game.mOnline[userid] = {}
+	if (this.Game.mOnline[userid] == undefined) {
+		this.Game.mOnline[userid] = {}
 	}
 
-	var user = game.Game.mOnline[userid];
+	var user = this.Game.mOnline[userid];
 	user.uptime = curTime;
 	if (session != undefined) {
 		user.session = session
@@ -141,5 +144,39 @@ exports.UpdateAlive = function(data) {
 }
 
 exports.removeRoom = function(roomid) {
-	delete game.Game.rooms[roomid]
+	delete this.Game.rooms[roomid]
+}
+
+// 检查在线
+exports.IsOnline = function(userid) {
+	if (this.Game.mOnline[userid] != undefined) {
+		var user = this.Game.mOnline[userid];
+		// 存在有效的登陆信息
+		if (user.uptime != undefined && (new Date().getTime() - user.uptime) < 300 * 1000) {
+			logger.LOG_DEBUG(__filename, __line, userid + " is online");
+			return true
+		}
+	}
+
+	return false
+}
+
+// 更新在线
+exports.UpdateOnline = function(userid, session) {
+	if (this.Game.mOnline[userid] == undefined) {
+		this.Game.mOnline[userid] = {};
+	}
+	if (session != undefined) {
+		this.Game.mOnline[userid].session = session
+	}
+	this.Game.mOnline[userid].uptime = new Date().getTime()
+}
+
+// 处理掉线情况, status:掉线前的状态
+exports.HandleDisconnect = function(userid, status) {
+	logger.LOG_DEBUG(__filename, __line, "move " + userid + " to offline with status " + status);
+	this.Game.mOffline[userid] = this.Game.mOnline[userid]
+	this.Game.mOffline[userid].status = status
+	this.Game.mOffline[userid].uptime = new Date().getTime()
+	delete this.Game.mOnline[userid]
 }

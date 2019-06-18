@@ -2,7 +2,12 @@ var Socket = {
 	socket : undefined,
 	CreateSocket : function() {
 		if (this.socket == undefined) {
-			this.socket = io.connect(serverPath + "/login", {reconnect:true, 'connect timeout': 200, reconnection: 1000});
+			this.socket = io.connect(serverPath + "/login", {reconnect:true, 'connect timeout': 200, reconnection: 1000, pingInterval: 5000, pingTimeout: 200});
+			this.socket.on('pong', () => {
+				console.log('pong !')
+				this.socket.emit('pongs', {});
+			})
+			
 		}
 	},
 	Login : function(handler, req) {

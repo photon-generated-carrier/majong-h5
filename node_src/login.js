@@ -1,39 +1,22 @@
 var redis = require('redis')
 var game = require("./game")
-var log4js = require('log4js');
-var logger = log4js.getLogger();
-logger.level = 'debug';
-
-logger.LOG_DEBUG = function (filename, line, d) {
-	logger.debug("[" + filename + "][" + line + "] " + d)
-}
-
-logger.LOG_ERROR = function (filename, line, d) {
-	logger.debug("[" + filename + "][" + line + "] " + d)
-}
+var logger = require("./mylogger")
 
 exports.Login = function(data, socket) {
 	if (data.id == "" || data.password == "")
 	{
 		logger.LOG_DEBUG(__filename, __line, 'empty login info');
 		socket.emit('login rsp', {ret: -1})
-		socket.disconnect();
 		return
 	}
 
 	var curTime = new Date().getTime();
 
 	// 检查在线 TODO: 先检查密码再检查在线
-	// if (game.Game.mOnline[data.id] != undefined) {
-	// 	var user = game.Game.mOnline[data.id];
-	// 	// 存在有效的登陆信息
-	// 	if (user.uptime != undefined && (curTime - user.uptime) < 300 * 1000) {
-	// 		logger.LOG_DEBUG(__filename, __line, data.id + " is online");
-	// 		socket.emit('login rsp', {ret: -10})
-	// 		socket.disconnect();
-	// 		return
-	// 	}
-	// }
+	if (game.IsOnline(data.id) == true) {
+			socket.emit('login rsp', {ret: -10})
+			return
+	}
 
 	var client = redis.createClient(6379, '127.0.0.1')
 	client.on('error', function (err) {
@@ -66,9 +49,11 @@ exports.Login = function(data, socket) {
 					game.UpdateSession(session)
 
 					// 记录在线
-					game.Game.mOnline[data.id] = {}
-					game.Game.mOnline[data.id].session = session
-					game.Game.mOnline[data.id].uptime = curTime
+					game.UpdateOnline(data.id, session)
+
+					socket.my = {}
+					socket.my.userid = data.id;
+					socket.my.session = session;
 
 					socket.emit('login rsp', {ret: 0, id:data.id, name:user.name, session:session})
 				} else {
@@ -103,14 +88,14 @@ exports.LoginWithSession = function(data, socket) {
 	var curTime = new Date().getTime()
 
 	// 检查在线
-	// if (game.Game.mOnline[userid] != undefined) {
-	// 	var user = game.Game.mOnline[userid];
-	// 	if (session != user.session) {
-	// 		logger.LOG_ERROR(__filename, __line, userid + " is online, get s:" + session + "actural s:" + user.session);
-	// 		res.ret = -10;
-	// 		return res
-	// 	}
-	// }
+	if (game.IsOnline(userid) == true) {
+		var user = game.Game.mOnline[userid];
+		if (session != user.session) {
+			logger.LOG_ERROR(__filename, __line, userid + " is online, get s:" + session + "actural s:" + user.session);
+			res.ret = -10;
+			return res
+		}
+	}
 
 	// 检查 session有效
 	if (game.GetSessionInfo(data.session) != undefined) {
@@ -119,10 +104,15 @@ exports.LoginWithSession = function(data, socket) {
 		// 更新缓存
 		game.UpdateSession(data.session)
 
+		// 记录在线
+		game.UpdateOnline(userid, name)
+
 		logger.LOG_DEBUG(__filename, __line, 'login with session succ!');
 		res.ret = 0;
 		res.id = userid;
 		res.name = name;
+		res.session = data.session
+
 		return res
 	}
 

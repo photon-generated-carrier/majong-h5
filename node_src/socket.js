@@ -1,28 +1,19 @@
 login = require("./login")
 game = require("./game")
-var log4js = require('log4js');
-var logger = log4js.getLogger();
-
-logger.LOG_DEBUG = function (filename, line, d) {
-	logger.debug("[" + filename + "][" + line + "] " + d)
-}
-
-logger.LOG_ERROR = function (filename, line, d) {
-	logger.debug("[" + filename + "][" + line + "] " + d)
-}
+var logger = require("./mylogger")
 
 // 在线用户保活踢出
-setInterval(function() {
-	var curTime = new Date().getTime();
+// setInterval(function() {
+// 	var curTime = new Date().getTime();
 
-	for (var key in game.Game.mOnline) {
-		var user = game.Game.mOnline[key]
-		if ((curTime - user.uptime) > 240 * 1000) {
-			logger.LOG_DEBUG(__filename, __line, "remove " + key + "from online list, time:" + user.uptime)
-			delete game.Game.mOnline[key];  
-		}
-	}
-}, 2000)
+// 	for (var key in game.Game.mOnline) {
+// 		var user = game.Game.mOnline[key]
+// 		if ((curTime - user.uptime) > 240 * 1000) {
+// 			logger.LOG_DEBUG(__filename, __line, "remove " + key + "from online list, time:" + user.uptime)
+// 			delete game.Game.mOnline[key];  
+// 		}
+// 	}
+// }, 2000)
 
 function GetRandomNum(Min,Max) {   
 	var Range = Max - Min;   
@@ -145,7 +136,8 @@ exports.Socket = {
 	},
 
 	init: function(server) {
-		io= require('socket.io')(server);
+		io = require('socket.io')(server, {pingInterval: 5000,
+			pingTimeout: 1000});
 	},
 	bind: function() {
 		var obj = this
@@ -162,7 +154,57 @@ exports.Socket = {
 			socket.on('connect with session req', (data, callback)=>{
 				logger.LOG_DEBUG(__filename, __line, "connect with session req " + JSON.stringify(data));
 				let res = login.LoginWithSession(data)
+
+				if (res.ret == 0) {
+					socket.my = {}
+					socket.my.userid = res.id;
+					socket.my.session = res.session;
+				}
 				callback(res)
+			});
+
+			socket.on('disconnect', (reason)=>{
+				var user = "Unknown";
+				if (socket.my != undefined && socket.my.userid != undefined) {
+					user = socket.my.userid
+				}
+				logger.LOG_DEBUG(__filename, __line, user + ' connect disconnect:' + reason);
+				// 处理掉线
+				if (socket.my != undefined && socket.my.userid != undefined) {
+					game.HandleDisconnect(socket.my.userid)
+				}
+			});
+
+			// 包活 (客户断收到pong)
+			socket.on('pongs', () => {
+				console.log(socket)
+				if (socket.my != undefined && socket.my.userid != undefined) {
+					logger.LOG_INFO(__filename, __line, 'recv pongs from: ' + socket.my.userid);
+					game.UpdateOnline(socket.my.userid)
+				}
+			})
+
+			socket.on('reconnect_attempt', (times) => {
+				console.log(socket)
+				if (socket.my != undefined) {
+					logger.LOG_DEBUG(__filename, __line, 'reconncet [' + times + '] to ' + socket.my.userid);
+					game.Game.mOnline[socket.my.userid].re_time = times;
+				}
+			});
+
+			socket.on('reconnect', (times) => {
+				if (socket.my != undefined) {
+					logger.LOG_DEBUG(__filename, __line, 'reconncet [' + times + '] to ' + socket.my.userid + ' succ');
+					game.Game.mOnline[socket.my.userid].re_time = 0;
+				}
+			});
+
+			socket.on('connect_error', (error) => {
+				var user = "Unknown";
+				if (socket.my != undefined && socket.my.userid != undefined) {
+					user = socket.my.userid
+				}
+				logger.LOG_DEBUG(__filename, __line, 'connect_error of: ' + user + " by " + error);
 			});
 
 			// 房间列表
@@ -227,29 +269,8 @@ exports.Socket = {
 		io.on('connection',  (socket)=>{
 			logger.LOG_DEBUG(__filename, __line, 'client connect server, ok!');
 		 
-			socket.on('disconnect', (reason)=>{
-				logger.LOG_DEBUG(__filename, __line, 'connect disconnect:' + reason);
-				// 处理掉线
-			});
+			
 		})
-
-		// 保活
-		// io.of('/keepalive').on('connection', socket => {
-		// 	// 保活
-		// 	socket.on('keepalive', (data)=>{
-		// 		logger.LOG_DEBUG(__filename, __line, 'keepalive:' + data.session)
-		// 		var rsp = {ret: 0}
-		// 		if (game.GetSessionInfo(data.session) == undefined) {
-		// 			// 服务器down了
-		// 			logger.LOG_DEBUG(__filename, __line, 'keepalive failed')
-		// 			rsp.ret = -10;
-		// 		} else {
-		// 			logger.LOG_DEBUG(__filename, __line, 'keepalive succ......')
-		// 			game.UpdateAlive(data)
-		// 		}
-		// 		socket.emit('keepalive rsp', rsp)
-		// 	})
-		// })
 
 		// 游戏长连接
 		io.of('/game').on('connection', socket => {
