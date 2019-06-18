@@ -218,6 +218,16 @@ exports.EnterRoom = function(userid, roomid) {
 	
 	roominfo.users.push({id: userid})
 
+	return this.GenerateRoomRes(roominfo)
+}
+
+exports.GenerateRoomRes = function(roominfo) {
+	var res = {ret : 0}
+	if (roominfo == undefined) {
+		res.ret = -1
+		return res
+	}
+
 	res.roominfo = {}
 	res.roominfo.id = roominfo.id;
 	res.roominfo.gm = roominfo.gm;
@@ -228,4 +238,54 @@ exports.EnterRoom = function(userid, roomid) {
 	}
 
 	return res
+}
+
+exports.LeaveRoom = function(socket, data) {
+	logger.LOG_DEBUG(__filename, __line, data.userid + " leave room " + data.roomid)
+	if (data.userid == undefined || data.roomid == undefined) {
+		return
+	}
+
+	// 从socket列表中移除
+	socket.leave(data.roomid)
+
+	var roominfo = game.Game.rooms[data.roomid]
+	if (roominfo == undefined) { return }
+
+	// 游戏已开始
+	if (roominfo.started != undefined && roominfo.started) {
+		logger.LOG_DEBUG(__filename, __line, "game had started...")
+		var msg = {}
+		msg.state = "end";
+		msg.oper = data.userid;
+		msg.op = "leave"
+		return msg;
+		// this.SendGameMessage(roominfo, msg)
+	} else {
+		// 更新人员
+		for (var i = 0; i < roominfo.users.length; i++) {
+			if (roominfo.users[i].id == data.userid) {
+				logger.LOG_DEBUG(__filename, __line, "remove " + data.userid + " from room")
+				roominfo.users.splice(i, 1);
+				break;
+			}
+		}
+
+		// 是否还有人
+		if (roominfo.users.length == 0) {
+			logger.LOG_DEBUG(__filename, __line, "destroy room " + roominfo.id)
+			// 销毁房间
+			game.removeRoom(roominfo.id);
+			return
+		}
+
+		// 房主更换
+		if (roominfo.gm == data.userid) {
+			logger.LOG_DEBUG(__filename, __line, "change gm from " + data.userid + " to " + roominfo.users[0].id)
+			roominfo.gm = roominfo.users[0].id
+		}
+
+		// 通知
+		socket.to(data.roomid).emit("room users changed", this.GenerateRoomRes(roominfo))
+	}
 }

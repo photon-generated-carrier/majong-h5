@@ -121,7 +121,7 @@ var Game = {
 			console.log("user changed")
 			console.log(data)
 			gGame = data
-			// obj.handleUserChanged(data)
+			obj.userChanged = true;
 		})
 		// Socket.socket.on('game msg', function(msg) {
 		// 	obj.handleGameMsg(msg);
@@ -177,24 +177,32 @@ var Game = {
 		this.exitButton = game.add.button(350, 830, 'button',null, this);
 		this.exitButton.title = game.add.text(this.exitButton.x + 50, this.exitButton.y + 30, '退出房间', { fontSize: '48px', fill: '#0AA' });
 		this.exitButton.onInputDown.add(function(button, pointer){
-			DEBUG_LOG("退出房间")
+			LOG_DEBUG("退出房间")
 			Socket.LeaveRoom(gGame.roominfo.id)
 			game.state.start("Room")
 		})
 
+		this.userChanged = true;
 		this.handleUserChanged(gGame)
 	},
 
 	exitButton : undefined,
 	StartGame : function() {
-		DEBUG_LOG("开始游戏！");
+		LOG_DEBUG("开始游戏！");
 
 		Socket.socket.emit("start game req", {roomid: gGame.roominfo.id})
 	},
 
+	userChanged : false,
 	userInfo : undefined,
 	crown : undefined,
 	handleUserChanged : function(data) {
+		if (this.userChanged == true) {
+			this.userChanged = false;
+		} else {
+			return;
+		}
+
 		if (this.userInfo != undefined) {
 			for (var i in this.userInfo) {
 				console.log("kill..")

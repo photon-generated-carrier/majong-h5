@@ -41,6 +41,14 @@ var Socket = {
 		}
 	},
 
+	// 通知账号退出
+	NotifyAccountExit : function(userid) {
+		LOG_DEBUG("account exit:" + userid);
+		// this.socket.emit('notify account exit', { userid : userid });
+		this.socket.disconnect();
+		this.socket = undefined;
+	},
+
 	GetRooms : function() {
 		LOG_DEBUG("get rooms:" + gUser.id);
 		this.socket.emit('rooms req', { user : gUser.id}, (data) => {
@@ -64,14 +72,6 @@ var Socket = {
 			handler(data, obj)
 		})
 	}, 
-
-	// 通知账号退出
-	NotifyAccountExit : function(userid) {
-		LOG_DEBUG("account exit:" + userid);
-		// this.socket.emit('notify account exit', { userid : userid });
-		this.socket.disconnect();
-		this.socket = undefined;
-	},
 
 	LeaveRoom : function(roomid) {
 		LOG_DEBUG("leave room:" + {userid: gUser.id, roomid:roomid})

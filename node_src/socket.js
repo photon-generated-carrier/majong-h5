@@ -15,10 +15,16 @@ var logger = require("./mylogger")
 // 	}
 // }, 2000)
 
+var objfile = this
+
 function GetRandomNum(Min,Max) {   
 	var Range = Max - Min;   
 	var Rand = Math.random();   
 	return(Min + Math.round(Rand * Range));   
+}
+
+exports.NotifyUserChanged = function(socket, roomid, data) {
+	socket.to(roomid).emit("room users changed", data)
 }
 
 exports.Socket = {
@@ -45,68 +51,6 @@ exports.Socket = {
 				this.socekts[key][i].emit('game msg', msg)
 			}
 		}
-	},
-
-	handleLeave : function(socket, data) {
-		if (data.userid == undefined || data.roomid == undefined) {
-			socket.disconnect();
-		}
-
-		logger.LOG_DEBUG(__filename, __line, data.userid + " leave room " + data.roomid)
-		var founded = false;
-		// 从socket列表中移除
-		for(var key in this.socekts) {
-			var index = this.socekts[key].indexOf(socket);
-			if (index > -1) {
-				logger.LOG_DEBUG(__filename, __line, "remove from " + key)
-				this.socekts[key].splice(index, 1);
-				founded = true;
-			}
-		}
-
-		if (!founded) { return }
-
-		var roominfo = game.Game.rooms[data.roomid]
-		if (roominfo == undefined) { return }
-		key = "room_" + data.roomid;
-		// 游戏已开始
-		if (roominfo.started != undefined && roominfo.started) {
-			logger.LOG_DEBUG(__filename, __line, "game had started...")
-			var msg = {}
-			msg.state = "end";
-			msg.oper = data.userid;
-			msg.op = "leave"
-			this.SendGameMessage(roominfo, msg)
-		} else {
-			// 更新人员
-			for (var i = 0; i < roominfo.users.length; i++) {
-				if (roominfo.users[i].id == data.userid) {
-					logger.LOG_DEBUG(__filename, __line, "remove " + data.userid + " from room")
-					roominfo.users.splice(i, 1);
-					break;
-				}
-			}
-
-			// 是否还有人
-			if (roominfo.users.length == 0) {
-				logger.LOG_DEBUG(__filename, __line, "destroy room " + roominfo.id)
-				// 销毁房间
-				game.removeRoom(roominfo.id);
-				socket.disconnect();
-				return
-			}
-
-			// 房主更换
-			if (roominfo.gm == data.userid) {
-				logger.LOG_DEBUG(__filename, __line, "change gm from " + data.userid + " to " + roominfo.users[0].id)
-				roominfo.gm = roominfo.users[0].id
-			}
-
-			// 通知
-			logger.LOG_DEBUG(__filename, __line, roominfo)
-			// this.NotifyUserChange(roominfo)
-		}
-		socket.disconnect();
 	},
 
 	init: function(server) {
@@ -145,7 +89,7 @@ exports.Socket = {
 				logger.LOG_DEBUG(__filename, __line, user + ' connect disconnect:' + reason);
 				// 处理掉线
 				if (socket.my != undefined && socket.my.userid != undefined) {
-					game.HandleDisconnect(socket.my.userid)
+					game.HandleDisconnect(socket.my.userid, 0)
 				}
 			});
 
@@ -219,6 +163,7 @@ exports.Socket = {
 				callback(res)
 			})
 
+			// 进入房间
 			socket.on('enter room req', (data, callback)=>{
 				logger.LOG_DEBUG(__filename, __line, "enter room req: " + JSON.stringify(data));
 
@@ -232,11 +177,16 @@ exports.Socket = {
 
 				// 通知房间内的用户
 				logger.LOG_DEBUG(__filename, __line, "notify user changed to:" + data.roomid + ", " + JSON.stringify(res))
-				socket.to(data.roomid).emit("room users changed", res)
+				objfile.NotifyUserChanged(socket, data.roomid, res)
 
 				socket.join(data.roomid)
 				socket.my.roomid =data.roomid
 				callback(res)
+			})
+
+			// 离开房间
+			socket.on('leave room', (data)=>{
+				game.LeaveRoom(socket, data)
 			})
 		})
 
@@ -254,9 +204,7 @@ exports.Socket = {
 				obj.handleLeave(socket, {userid:socket.userid, roomid:socket.roomid})
 			})
 
-			socket.on('leave room', (data)=>{
-				obj.handleLeave(socket, data)
-			})
+			
 
 			
 
