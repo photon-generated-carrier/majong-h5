@@ -35,4 +35,11 @@ var Login = {
 			game.state.start('Room');
 		}
 	},
+
+	Relogin : function(msg) {
+		LOG_DEBUG("relogin by " + msg)
+		$("#alertTxt").html(msg) 
+		$("#myModal").modal()
+		game.state.start('Login');
+	}
 }

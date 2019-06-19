@@ -2,7 +2,7 @@ var Socket = {
 	socket : undefined,
 	CreateSocket : function() {
 		if (this.socket == undefined) {
-			this.socket = io.connect(serverPath + "/login", {reconnect:true, 'connect timeout': 200, reconnection: 1000, pingInterval: 5000, pingTimeout: 200});
+			this.socket = io.connect(serverPath + "/login", {reconnect:false, 'connect timeout': 200, reconnection: 1000, pingInterval: 5000, pingTimeout: 200});
 			this.socket.on('pong', () => {
 				LOG_INFO('pong !')
 				this.socket.emit('pongs', {});
@@ -19,6 +19,11 @@ var Socket = {
 			this.socket.on('connect_error', (error) => {
 				LOG_ERROR('connect_error [' + error + ']');
 			});
+
+			this.socket.on('disconnect', (error) => {
+				LOG_ERROR('disconnected, [' + error + ']');
+				Login.Relogin("服务器断开，请重新登录!")
+			})
 		}
 	},
 	Login : function(handler, req) {

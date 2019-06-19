@@ -223,6 +223,7 @@ exports.EnterRoom = function(userid, roomid) {
 	}
 	
 	roominfo.users.push({id: userid})
+	this.Game.users[userid].room = roomid
 
 	return this.GenerateRoomRes(roominfo)
 }
@@ -247,10 +248,18 @@ exports.GenerateRoomRes = function(roominfo) {
 }
 
 exports.LeaveRoom = function(socket, data) {
+	if (data == undefined) {
+		data = {}
+		data.userid = socket.my.userid
+		data.roomid = this.Game.users[socket.my.userid].room
+	}
 	logger.LOG_DEBUG(__filename, __line, data.userid + " leave room " + data.roomid)
 	if (data.userid == undefined || data.roomid == undefined) {
 		return
 	}
+
+	// 移除房间信息
+	this.Game.users[socket.my.userid].room = undefined
 
 	// 从socket列表中移除
 	socket.leave(data.roomid)

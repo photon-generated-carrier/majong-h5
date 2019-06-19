@@ -91,6 +91,7 @@ exports.Socket = {
 				// 处理掉线
 				if (socket.my != undefined && socket.my.userid != undefined) {
 					game.HandleDisconnect(socket.my.userid, 0)
+					game.LeaveRoom(socket)
 				}
 			});
 
