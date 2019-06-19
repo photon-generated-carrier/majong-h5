@@ -4,10 +4,21 @@ var Socket = {
 		if (this.socket == undefined) {
 			this.socket = io.connect(serverPath + "/login", {reconnect:true, 'connect timeout': 200, reconnection: 1000, pingInterval: 5000, pingTimeout: 200});
 			this.socket.on('pong', () => {
-				console.log('pong !')
+				LOG_INFO('pong !')
 				this.socket.emit('pongs', {});
 			})
-			
+
+			this.socket.on('reconnect_attempt', (times) => {
+				LOG_ERROR('reconncet [' + times + ']');
+			});
+
+			this.socket.on('reconnect', (times) => {
+				LOG_ERROR('reconncet succ with [' + times + ']');
+			});
+
+			this.socket.on('connect_error', (error) => {
+				LOG_ERROR('connect_error [' + error + ']');
+			});
 		}
 	},
 	Login : function(handler, req) {

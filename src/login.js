@@ -31,11 +31,6 @@ var Login = {
 			gUser.name = rsp.name
 			UpdateLocalTime("session")
 
-			gAliveTime = new Date().getTime()
-			gAliveId = setInterval(function() {
-				HandleKeepAlive()
-			}, 2000)
-			
 			// 切状态
 			game.state.start('Room');
 		}

@@ -41,17 +41,18 @@ exports.Socket = {
 		}
 	},
 
-	SendGameMessageTo : function (roominfo, userid, msg) {
-		logger.LOG_DEBUG(__filename, __line, "send msg to " + JSON.stringify(roominfo) + ", "+ userid + ", "+ JSON.stringify(msg))
-		// 通知房间内的用户
-		var key = "room_" + roominfo.id
-		for (var i in this.socekts[key])
-		{
-			if (this.socekts[key][i].userid == userid) {
-				this.socekts[key][i].emit('game msg', msg)
-			}
-		}
-	},
+	// SendGameMessageTo : function (roominfo, userid, msg) {
+	// 	// logger.LOG_DEBUG(__filename, __line, "send msg to " + JSON.stringify(roominfo) + ", "+ userid + ", "+ JSON.stringify(msg))
+	// 	// // 通知房间内的用户
+	// 	// var key = "room_" + roominfo.id
+	// 	// io.of("/login").
+	// 	// for (var i in socket.rooms[key])
+	// 	// {
+	// 	// 	if (this.socekts[key][i].userid == userid) {
+	// 	// 		this.socekts[key][i].emit('game msg', msg)
+	// 	// 	}
+	// 	// }
+	// },
 
 	init: function(server) {
 		io = require('socket.io')(server, {pingInterval: 5000,
@@ -188,25 +189,6 @@ exports.Socket = {
 			socket.on('leave room', (data)=>{
 				game.LeaveRoom(socket, data)
 			})
-		})
-
-		io.on('connection',  (socket)=>{
-			logger.LOG_DEBUG(__filename, __line, 'client connect server, ok!');
-		})
-
-		// 游戏长连接
-		io.of('/game').on('connection', socket => {
-
-			socket.on('disconnect', (data)=>{
-				logger.LOG_DEBUG(__filename, __line, socket.id)
-				logger.LOG_DEBUG(__filename, __line, socket.userid)
-				logger.LOG_DEBUG(__filename, __line, socket.roomid)
-				obj.handleLeave(socket, {userid:socket.userid, roomid:socket.roomid})
-			})
-
-			
-
-			
 
 			socket.on('start game req', (data)=>{
 				logger.LOG_DEBUG(__filename, __line, 'start game req ' + data.roomid)
@@ -230,12 +212,15 @@ exports.Socket = {
 					mgames.users[i] = {}
 					mgames.users[i].id = roominfo.users[i].id;
 					mgames.users[i].cards = games.vec[i]
-					msg.usercards = games.vec[i]
-					// msg.banker = mgames.users[i].id
-					// 手牌单独发给用户
-					obj.SendGameMessageTo(roominfo, mgames.users[i].id, msg)
+					// msg.usercards = games.vec[i]
+					// // msg.banker = mgames.users[i].id
+					// // 手牌单独发给用户
+					// obj.SendGameMessageTo(roominfo, mgames.users[i].id, msg)
 				}
+				msg.users = mgames.users
+				io.of("/login").to(roominfo.id).emit('game msg', msg)
 			})
-		});
+		})
 	}
+
 }

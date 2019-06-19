@@ -7,8 +7,28 @@ var Game = {
 		game.load.spritesheet('card', 'assets/majong.png', 196, 256);
 	},
 
+	gameStatus : 0, // -1:有人退出，0 : 等人, 1: 开局, 2:换牌
+	msg : {},
+
 	update: function() {
-		this.handleUserChanged(gGame)
+		if (this.msgNo > this.lastMsgNo) {
+			LOG_DEBUG("msgNO:" + this.msgNo + " , lastNo:" + this.lastMsgNo)
+			this.lastMsgNo = this.lastMsgNo + 1
+		} else {
+			return;
+		}
+
+		LOG_DEBUG("gameStatus:" + this.gameStatus)
+		
+		if (this.gameStatus == 0 || this.gameStatus == -1)
+		{
+			this.handleUserChanged(gGame)
+		}
+
+		if (this.gameStatus == 1)
+		{
+			this.renderCards(this.msg)
+		}
 	},
 
 	/*
@@ -25,15 +45,25 @@ var Game = {
 	*/
 	allcardsP : {x : 235, y: 370 },
 
-	cards : [],
-	cardsS : [],
+	cards : [], // 我的牌
+	cardsS : [], // 打出的牌
 
 	renderCards : function(msg) {
+		this.cardsS = msg.cards
 		// 打出的牌
 		if (msg.cards != undefined) {
 
-		} else if (msg.usercards != undefined) {
-			this.cards = msg.usercards;
+		}
+		if (msg.users != undefined) {
+			for (var i in msg.users) {
+				if (msg.users[i].id == gUser.id) {
+					this.cards = msg.users[i].cards
+					break
+				}
+			}
+			if (this.cards == undefined) {
+				return
+			}
 			// 手牌区
 			var dx = 70;
 			var dy = dx / 196 * 256;
@@ -41,10 +71,10 @@ var Game = {
 			var scaleY = dy / 256;
 			var i = 0;
 			this.cardsS = []
-			for (var i = 0; i < msg.usercards.length; i++) {
+			for (var i = 0; i < this.cards.length; i++) {
 				var x = this.allcardsP.x + 10 + (i % 7) * dx
 				var y = this.allcardsP.y + 5 + Math.floor(i / 7) * dy
-				var index = Math.floor(msg.usercards[i] / 10) * 9 + msg.usercards[i] % 10 - 1;
+				var index = Math.floor(this.cards[i] / 10) * 9 + this.cards[i] % 10 - 1;
 				var image = game.add.button(x, y, "card", null, index, index, index);
 				image.scale.setTo(scaleX, scaleY)
 				image.onInputDown.add(function(button, pointer){
@@ -82,9 +112,9 @@ var Game = {
 	},
 
 	handleGameMsg : function(msg) {
-		console.log("game msg: " + JSON.stringify(msg))
+		LOG_INFO("game msg: " + JSON.stringify(msg))
 		// 初始发牌
-		console.log("state:" + msg.state)
+		LOG_DEBUG("state:" + msg.state)
 		switch (msg.state)
 		{
 		case "init card": // 开局
@@ -96,8 +126,9 @@ var Game = {
 			this.exitButton.y = 10;
 			this.exitButton.title.x = this.exitButton.x + 25;
 			this.exitButton.title.y = this.exitButton.y + 15;
-			this.renderCards(msg) // 显示
-			this.DoChange();
+			this.msg = msg // 显示
+			this.msgNo = this.msgNo + 1
+			this.gameStatus = 1
 			break;
 		case "one card": // 打了一张牌
 			this.dealOneCard(msg)
@@ -118,14 +149,16 @@ var Game = {
 	create: function () {
 		var obj = this
 		Socket.socket.on('room users changed', function (data) {
-			console.log("user changed")
-			console.log(data)
+			LOG_DEBUG("user changed")
+			LOG_INFO(data)
 			gGame = data
-			obj.userChanged = true;
+			obj.msgNo = obj.msgNo + 1;
 		})
-		// Socket.socket.on('game msg', function(msg) {
-		// 	obj.handleGameMsg(msg);
-		// })
+		Socket.socket.on('game msg', function(msg) {
+			LOG_DEBUG('game msg')
+			LOG_INFO(msg)
+			obj.handleGameMsg(msg);
+		})
 		game.add.sprite(0, 0, 'ground');
 		this.platforms = game.add.group();
 		this.platforms.enableBody = true;
@@ -182,7 +215,7 @@ var Game = {
 			game.state.start("Room")
 		})
 
-		this.userChanged = true;
+		this.msgNo = this.msgNo + 1;
 		this.handleUserChanged(gGame)
 	},
 
@@ -193,16 +226,11 @@ var Game = {
 		Socket.socket.emit("start game req", {roomid: gGame.roominfo.id})
 	},
 
-	userChanged : false,
+	msgNo : 0,
+	lastMsgNo : 0,
 	userInfo : undefined,
 	crown : undefined,
 	handleUserChanged : function(data) {
-		if (this.userChanged == true) {
-			this.userChanged = false;
-		} else {
-			return;
-		}
-
 		if (this.userInfo != undefined) {
 			for (var i in this.userInfo) {
 				console.log("kill..")

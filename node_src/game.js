@@ -215,6 +215,12 @@ exports.EnterRoom = function(userid, roomid) {
 		res.ret = -1
 		return res
 	}
+
+	if (roominfo.users.length >= 4) {
+		logger.LOG_DEBUG(__filename, __line, data.userid + "enter room reject for full: " + roomid + "," + userid)
+		res.ret = -10
+		return res
+	}
 	
 	roominfo.users.push({id: userid})
 
@@ -277,6 +283,20 @@ exports.LeaveRoom = function(socket, data) {
 			// 销毁房间
 			game.removeRoom(roominfo.id);
 			return
+		} else {
+			// 都是机器人
+			let hasMan = false;
+			for (var key in roominfo.users) {
+				if (roominfo.users[key].id.substr(0, 1) != "j") {
+					hasMan = true
+					break;
+				}
+			}
+			if (hasMan == false) {
+				logger.LOG_DEBUG(__filename, __line, "all bots, destroy room " + roominfo.id)
+				// 销毁房间
+				game.removeRoom(roominfo.id);
+			}
 		}
 
 		// 房主更换

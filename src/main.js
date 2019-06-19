@@ -34,11 +34,6 @@ function handleLoginRsp(data) {
 		gUser.name = data.name
 		SetLocal("session", data.session) // 记录session
 
-		gAliveTime = new Date().getTime()
-		gAliveId = setInterval(function() {
-			HandleKeepAlive()
-		}, 2000)
-
 		game.state.start('Room');
 	} else if (data.ret == -10) {
 		// alert("已在线")

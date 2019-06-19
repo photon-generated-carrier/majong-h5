@@ -118,10 +118,9 @@ var Room = {
 	// 进入房间的回调
 	handleEnterRomm : function(data, obj) {
 		console.log("enter room back");
-		if (data == undefined) {
-			console.log("enter room failed");
+		if (data == undefined || data.ret != 0) {
+			LOG_ERROR("enter room failed:" + JSON.stringify(data));
 			obj.needRefresh = true;
-			Socket.GetRooms(obj.handleRooms, obj)
 		}
 
 		obj.EnterRoom(data)
@@ -131,16 +130,15 @@ var Room = {
 	handleCreateRomm : function(data, obj) {
 		console.log("create room back");
 		if (data == undefined) {
-			console.log("create room failed");
+			LOG_ERROR("create room failed");
 			obj.needRefresh = true;
-			Socket.GetRooms(obj.handleRooms, obj)
 		}
 
 		obj.EnterRoom(data)
 	},
 
 	EnterRoom : function(data) {
-		console.log("Enter room with:" + JSON.stringify(data));
+		LOG_DEBUG("Enter room with:" + JSON.stringify(data));
 		gGame = data;
 		clearInterval(this.intervalId)
 		game.state.start('Game');

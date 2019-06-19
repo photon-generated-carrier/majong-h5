@@ -52,7 +52,7 @@ function LOG_ERROR(log) {
 }
 
 function LOG_INFO(log) {
-	if (gDbgLvl >= 3) {
+	if (gDbgLvl >= 2) {
 		console.log(log)
 	}
 }
