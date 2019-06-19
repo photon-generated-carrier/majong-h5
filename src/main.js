@@ -9,7 +9,9 @@ var serverPath = urlPath.substring(0, index);
 var gUser = {}  // 当前用户
 var gGame = {}; // 保存全局信息 {users:[{id,name}], roominfo:{gm, id}}
 
-var game = new Phaser.Game(980, 1742, Phaser.AUTO, 'game')
+var height = 1742
+var width = 980
+var game = new Phaser.Game(width, height, Phaser.AUTO, 'game')
 game.scale = Phaser.ScaleManager.SHOW_ALL
 
 game.state.add('Login', Login);
@@ -17,6 +19,22 @@ game.state.add('Room', Room);
 game.state.add('Game', Game);
 
 game.state.start('Login');
+
+let direction = '1'
+function getDirection() {
+	switch (window.orientation) {
+		case 0:
+		case 180:
+			direction = '1'
+			break;
+		case -90:
+		case 90:
+			direction = '一'
+			break;
+	}
+}
+
+window.onorientationchange = getDirection
 
 /*
 	login rsp = data {

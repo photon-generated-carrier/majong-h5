@@ -146,8 +146,24 @@ var Game = {
 	},
 
 	startButton : undefined,
+	
 	create: function () {
 		var obj = this
+		Phaser.World.prototype.displayObjectUpdateTransform = function () {
+			if (direction == '1') {
+				game.scale.setGameSize(width, height)
+				this.x = game.camera.y + game.width;
+				this.y = -game.camera.x;
+				this.rotation = Phaser.Math.degToRad(Phaser.Math.wrapAngle(90));
+			} else {
+				game.scale.setGameSize(height, width)
+				this.x = -game.camera.x;
+				this.y = -game.camera.y;
+				this.rotation = 0;
+			}
+			PIXI.DisplayObject.prototype.updateTransform.call(this);
+		}
+
 		Socket.socket.on('room users changed', function (data) {
 			LOG_DEBUG("user changed")
 			LOG_INFO(data)
@@ -159,7 +175,11 @@ var Game = {
 			LOG_INFO(msg)
 			obj.handleGameMsg(msg);
 		})
-		game.add.sprite(0, 0, 'ground');
+		var ground = game.add.sprite(0, 0, 'ground')
+		ground.anchor.x = 0;
+		ground.anchor.y = 0;
+		ground.angle = 90;
+		ground.x += height
 		this.platforms = game.add.group();
 		this.platforms.enableBody = true;
 
