@@ -22,22 +22,24 @@ var Login = {
 
 	handleConnectRsp: function(rsp) {
 		if (rsp == undefined || rsp.ret != 0) {
-			console.log("need login")
+			LOG_ERROR("need login")
 			$("#loginDiv").show()
 		} else {
-			console.log("reconnected")
+			LOG_DEBUG("reconnected:" + JSON.stringify(rsp))
 			// 获取必要信息
 			gUser.id = rsp.id
 			gUser.name = rsp.name
 			UpdateLocalTime("session")
 
-			gAliveTime = new Date().getTime()
-			gAliveId = setInterval(function() {
-				HandleKeepAlive()
-			}, 2000)
-			
 			// 切状态
 			game.state.start('Room');
 		}
 	},
+
+	Relogin : function(msg) {
+		LOG_DEBUG("relogin by " + msg)
+		$("#alertTxt").html(msg) 
+		$("#myModal").modal()
+		game.state.start('Login');
+	}
 }

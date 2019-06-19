@@ -1,120 +1,134 @@
 var Socket = {
+	socket : undefined,
+	CreateSocket : function() {
+		if (this.socket == undefined) {
+			this.socket = io.connect(serverPath + "/login", {reconnect:false, 'connect timeout': 200, reconnection: 1000, pingInterval: 5000, pingTimeout: 200});
+			this.socket.on('pong', () => {
+				LOG_INFO('pong !')
+				this.socket.emit('pongs', {});
+			})
+
+			this.socket.on('reconnect_attempt', (times) => {
+				LOG_ERROR('reconncet [' + times + ']');
+			});
+
+			this.socket.on('reconnect', (times) => {
+				LOG_ERROR('reconncet succ with [' + times + ']');
+			});
+
+			this.socket.on('connect_error', (error) => {
+				LOG_ERROR('connect_error [' + error + ']');
+			});
+
+			this.socket.on('disconnect', (error) => {
+				LOG_ERROR('disconnected, [' + error + ']');
+				Login.Relogin("服务器断开，请重新登录!")
+			})
+		}
+	},
 	Login : function(handler, req) {
-		var socket = io.connect(serverPath);
-		socket.emit('login req', { id: req.id, password: req.password});
-		socket.on('login rsp', function (data) {
-			socket.disconnect();
+		this.CreateSocket()
+		LOG_DEBUG("login req:" + JSON.stringify(req))
+		this.socket.emit('login req', { id: req.id, password: req.password})
+		var obj = this
+		this.socket.once('login rsp', (data) => {
+			LOG_INFO("login rsp:" + JSON.stringify(data))
+			if (data.ret != 0) {
+				obj.socket.disconnect()
+				obj.socket = undefined
+			}
 			handler(data)
 		});
-	},
-
-	GetRooms : function(handler, obj) {
-		var socket = io.connect(serverPath);
-		console.log("get rooms");
-		socket.emit('rooms req', { user : gUser.id});
-		socket.on('rooms rsp', function (data) {
-			socket.disconnect();
-			handler(data, obj)
-		})
-		
-		return socket;
-	},
-
-	EnterRoom : function(handler, roomId, obj) {
-		var socket = io.connect(serverPath + "/game");
-		console.log("enter rooms:" + roomId);
-		socket.emit('enter room req', { user : gUser.id, roomid : roomId});
-		socket.on('enter room rsp', function (data) {
-			handler(data, obj)
-		})
-		// var my = this;
-		// socket.on('disconnect', function (data) {
-		// 	my.OnSvrDown();
-		// })
-		return socket
-	},
-
-	CreateRoom : function(handler, userid, obj) {
-		var socket = io.connect(serverPath + "/game");
-		console.log("create room:" + userid);
-		socket.emit('create room req', { userid : gUser.id });
-		socket.on('create room rsp', function (data) {
-			handler(data, obj)
-		})
-		// var my = this;
-		// socket.on('disconnect', function (data) {
-		// 	my.OnSvrDown();
-		// })
-		return socket
-	}, 
-
-	OnSvrDown : function() {
-		console.log("svr down!!!!")
-		// alert("服务器断开连接。。。。")
 	},
 
 	// 尝试用session连接
 	Connect : function(handler) {
 		var session = GetLocal("session", 3600 * 24 * 1000); // 1天过期
+		LOG_DEBUG("connect:" + session);
 		if (session != undefined) {
-			var socket = io.connect(serverPath);
-			socket.emit('connect with session req', {session : session});
-			socket.on('connect with session rsp', function (data) {
-				socket.disconnect();
+			this.CreateSocket()
+			this.socket.emit('connect with session req', {session : session}, (data) => {
+				LOG_INFO("connect rsp:" + JSON.stringify(data))
 				handler(data)
 			});
 		} else {
+			LOG_DEBUG("connect failed, no session");
 			handler()
 		}
 	},
 
 	// 通知账号退出
 	NotifyAccountExit : function(userid) {
-		var socket = io.connect(serverPath);
-		console.log("account exit:" + userid);
-		socket.emit('notify account exit', { userid : userid });
-		// socket.disconnect()
+		LOG_DEBUG("account exit:" + userid);
+		// this.socket.emit('notify account exit', { userid : userid });
+		this.socket.disconnect();
+		this.socket = undefined;
+	},
+
+	GetRooms : function() {
+		LOG_DEBUG("get rooms:" + gUser.id);
+		this.socket.emit('rooms req', { user : gUser.id}, (data) => {
+			LOG_INFO("rooms rsp:" + JSON.stringify(data))
+			Room.data = data;
+		});
+	},
+
+	EnterRoom : function(handler, roomId, obj) {
+		LOG_DEBUG("enter rooms:" + roomId);
+		this.socket.emit('enter room req', { user : gUser.id, roomid : roomId}, (data) => {
+			LOG_INFO("enter rsp:" + JSON.stringify(data))
+			handler(data, obj)
+		})
+	},
+
+	CreateRoom : function(handler, userid, obj) {
+		LOG_DEBUG("create room:" + userid);
+		this.socket.emit('create room req', { userid : gUser.id }, (data) => {
+			LOG_INFO("create room rsp:" + JSON.stringify(data))
+			handler(data, obj)
+		})
+	}, 
+
+	LeaveRoom : function(roomid) {
+		LOG_DEBUG("leave room:" + {userid: gUser.id, roomid:roomid})
+		this.socket.emit("leave room", {userid: gUser.id, roomid:roomid})
+	},
+
+	OnSvrDown : function() {
+		console.log("svr down!!!!")
+		// alert("服务器断开连接。。。。")
 	},
 
 	alive : false,
 	KeepAlive : function() {
-		console.log("keep alive....");
-		this.alive = false; // 保活状态
-		socketAlive = io.connect(serverPath + "/keepalive", {reconnect:false,  'connect timeout': 100});
-		socketAlive.emit("keepalive", {userid: gUser.id, session: GetLocal("session")})
-		var obj = this;
-		socketAlive.on('keepalive rsp', function(rsp) {
-			if (rsp.ret == 0) {
-				console.log("keep alive succ........");
-				obj.alive = true;
-				gAliveTime = new Date().getTime()
-			} else {
-				console.log("server restarted....");
-				clearInterval(gAliveId);
-				Room.needRefresh = false;
-				game.state.start("Login");
-			}
-		})
+		// console.log("keep alive....");
+		// this.alive = false; // 保活状态
+		// socketAlive = io.connect(serverPath + "/keepalive", {reconnect:false,  'connect timeout': 100});
+		// socketAlive.emit("keepalive", {userid: gUser.id, session: GetLocal("session")})
+		// var obj = this;
+		// socketAlive.on('keepalive rsp', function(rsp) {
+		// 	if (rsp.ret == 0) {
+		// 		console.log("keep alive succ........");
+		// 		obj.alive = true;
+		// 		gAliveTime = new Date().getTime()
+		// 	} else {
+		// 		console.log("server restarted....");
+		// 		clearInterval(gAliveId);
+		// 		Room.needRefresh = false;
+		// 		game.state.start("Login");
+		// 	}
+		// })
 
-		socketAlive.on('connect_error', function(data){
-			console.log("keepalive" + ' - connect_error');
-			socketAlive.disconnect();
-		});
-		socketAlive.on('connect_timeout', function(data){
-			console.log("keepalive" + ' - connect_timeout');
-			socketAlive.disconnect();
-		});
+		// socketAlive.on('connect_error', function(data){
+		// 	console.log("keepalive" + ' - connect_error');
+		// 	socketAlive.disconnect();
+		// });
+		// socketAlive.on('connect_timeout', function(data){
+		// 	console.log("keepalive" + ' - connect_timeout');
+		// 	socketAlive.disconnect();
+		// });
 
-		UpdateLocalTime("session")
-	},
-
-	LeaveRoom : function(eGameSocket, roomid) {
-		if (eGameSocket == undefined || roomid == undefined) {
-			return
-		}
-		eGameSocket.emit("leave room", {userid: gUser.id, roomid:roomid})
-		// eGameSocket.disconnect();
-		eGameSocket = undefined;
+		// UpdateLocalTime("session")
 	},
 }
 

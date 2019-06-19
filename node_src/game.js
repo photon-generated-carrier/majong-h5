@@ -1,9 +1,12 @@
 
+var logger = require("./mylogger")
+
 exports.Game = {
 	rooms : new Map, // {id, gm, started, title, users}
 	users : new Map,
 	mSession : new Map, // 连接列表
 	mOnline : new Map, // 在线列表
+	mOffline : new Map, // 掉线列表，用来断线重连
 	games : new Map, // roomid -> {users:{id, cards:[]}, cards:{}}
 
 	ShuffleSwap : function(arr) {
@@ -91,25 +94,25 @@ exports.GetUserName = function(userid) {
 
 exports.UpdateSession = function(session) {
 	if (session == undefined) {
-		console.log("can't set undefined session")
+		logger.LOG_ERROR(__filename, __line, "can't set undefined session")
 		return
 	}
 
 	var curTime = new Date().getTime();
-	if (game.Game.mSession[session]  == undefined) {
-		game.Game.mSession[session] = {}
+	if (this.Game.mSession[session]  == undefined) {
+		this.Game.mSession[session] = {}
 	}
-	game.Game.mSession[session].uptime = curTime
+	this.Game.mSession[session].uptime = curTime
 }
 
 // exp:3600 * 24 * 1000
 exports.GetSessionInfo = function(session, exp) {
 	var curTime = new Date().getTime();
 	if (exp == undefined) { exp = 3600 * 24 * 1000 }
-	if (game.Game.mSession[session] != undefined &&
-		game.Game.mSession[session].uptime != undefined &&
-		(curTime - game.Game.mSession[session].uptime) < exp) {
-		return game.Game.mSession[session]
+	if (this.Game.mSession[session] != undefined &&
+		this.Game.mSession[session].uptime != undefined &&
+		(curTime - this.Game.mSession[session].uptime) < exp) {
+		return this.Game.mSession[session]
 	}
 	
 	return undefined
@@ -119,15 +122,15 @@ exports.UpdateOnline = function(userid, session) {
 	var curTime = new Date().getTime();
 
 	if (userid == undefined) {
-		console.log("can't set undefined Online")
+		logger.LOG_ERROR(__filename, __line, "can't set undefined Online")
 		return
 	}
 
-	if (game.Game.mOnline[userid] == undefined) {
-		game.Game.mOnline[userid] = {}
+	if (this.Game.mOnline[userid] == undefined) {
+		this.Game.mOnline[userid] = {}
 	}
 
-	var user = game.Game.mOnline[userid];
+	var user = this.Game.mOnline[userid];
 	user.uptime = curTime;
 	if (session != undefined) {
 		user.session = session
@@ -141,5 +144,177 @@ exports.UpdateAlive = function(data) {
 }
 
 exports.removeRoom = function(roomid) {
-	delete game.Game.rooms[roomid]
+	delete this.Game.rooms[roomid]
+}
+
+// 检查在线
+exports.IsOnline = function(userid) {
+	if (this.Game.mOnline[userid] != undefined) {
+		var user = this.Game.mOnline[userid];
+		// 存在有效的登陆信息
+		if (user.uptime != undefined && (new Date().getTime() - user.uptime) < 300 * 1000) {
+			logger.LOG_DEBUG(__filename, __line, userid + " is online");
+			return true
+		}
+	}
+
+	return false
+}
+
+// 更新在线
+exports.UpdateOnline = function(userid, session) {
+	if (this.Game.mOnline[userid] == undefined) {
+		this.Game.mOnline[userid] = {};
+	}
+	if (session != undefined) {
+		this.Game.mOnline[userid].session = session
+	}
+	this.Game.mOnline[userid].uptime = new Date().getTime()
+}
+
+// 处理掉线情况, status:掉线前的状态
+exports.HandleDisconnect = function(userid, status) {
+	logger.LOG_DEBUG(__filename, __line, "move " + userid + " to offline with status " + status);
+	this.Game.mOffline[userid] = this.Game.mOnline[userid]
+	this.Game.mOffline[userid].status = status
+	this.Game.mOffline[userid].uptime = new Date().getTime()
+	delete this.Game.mOnline[userid]
+}
+
+// 创建房间，返回roominfo
+exports.CreateRoom = function(userid) {
+	var roomid = "room:" + userid + ":" + Math.floor(new Date().getTime() / 1000);
+	logger.LOG_DEBUG(__filename, __line, "crate room: " + roomid);
+
+	this.Game.users[userid].room = roomid // 加入房间
+
+	this.Game.rooms[roomid] = {}
+	var roominfo = this.Game.rooms[roomid]
+	roominfo.id = roomid;
+	roominfo.gm = userid;
+	roominfo.title = this.Game.users[userid].name + "的房间" 
+	roominfo.users = new Array()
+	roominfo.users[0] = {id: userid}
+
+	// TODO: 测试账号
+	roominfo.users.push({id: "j1"})
+	roominfo.users.push({id: "j2"})
+	// roominfo.users.push({id: "j3"})
+
+	return roominfo
+}
+
+exports.EnterRoom = function(userid, roomid) {
+	var res = {ret : 0}
+	if (userid == undefined || roomid == undefined) {
+		res.ret = -1
+		return res
+	}
+	var roominfo = this.Game.rooms[roomid]
+	if (roominfo == undefined) {
+		res.ret = -1
+		return res
+	}
+
+	if (roominfo.users.length >= 4) {
+		logger.LOG_DEBUG(__filename, __line, data.userid + "enter room reject for full: " + roomid + "," + userid)
+		res.ret = -10
+		return res
+	}
+	
+	roominfo.users.push({id: userid})
+	this.Game.users[userid].room = roomid
+
+	return this.GenerateRoomRes(roominfo)
+}
+
+exports.GenerateRoomRes = function(roominfo) {
+	var res = {ret : 0}
+	if (roominfo == undefined) {
+		res.ret = -1
+		return res
+	}
+
+	res.roominfo = {}
+	res.roominfo.id = roominfo.id;
+	res.roominfo.gm = roominfo.gm;
+	res.users = []
+	for (i = 0; i < roominfo.users.length; i++)
+	{
+		res.users[i] = this.Game.users[roominfo.users[i].id];
+	}
+
+	return res
+}
+
+exports.LeaveRoom = function(socket, data) {
+	if (data == undefined) {
+		data = {}
+		data.userid = socket.my.userid
+		data.roomid = this.Game.users[socket.my.userid].room
+	}
+	logger.LOG_DEBUG(__filename, __line, data.userid + " leave room " + data.roomid)
+	if (data.userid == undefined || data.roomid == undefined) {
+		return
+	}
+
+	// 移除房间信息
+	this.Game.users[socket.my.userid].room = undefined
+
+	// 从socket列表中移除
+	socket.leave(data.roomid)
+
+	var roominfo = game.Game.rooms[data.roomid]
+	if (roominfo == undefined) { return }
+
+	// 游戏已开始
+	if (roominfo.started != undefined && roominfo.started) {
+		logger.LOG_DEBUG(__filename, __line, "game had started...")
+		var msg = {}
+		msg.state = "end";
+		msg.oper = data.userid;
+		msg.op = "leave"
+		return msg;
+		// this.SendGameMessage(roominfo, msg)
+	} else {
+		// 更新人员
+		for (var i = 0; i < roominfo.users.length; i++) {
+			if (roominfo.users[i].id == data.userid) {
+				logger.LOG_DEBUG(__filename, __line, "remove " + data.userid + " from room")
+				roominfo.users.splice(i, 1);
+				break;
+			}
+		}
+
+		// 是否还有人
+		if (roominfo.users.length == 0) {
+			logger.LOG_DEBUG(__filename, __line, "destroy room " + roominfo.id)
+			// 销毁房间
+			game.removeRoom(roominfo.id);
+			return
+		} else {
+			// 都是机器人
+			let hasMan = false;
+			for (var key in roominfo.users) {
+				if (roominfo.users[key].id.substr(0, 1) != "j") {
+					hasMan = true
+					break;
+				}
+			}
+			if (hasMan == false) {
+				logger.LOG_DEBUG(__filename, __line, "all bots, destroy room " + roominfo.id)
+				// 销毁房间
+				game.removeRoom(roominfo.id);
+			}
+		}
+
+		// 房主更换
+		if (roominfo.gm == data.userid) {
+			logger.LOG_DEBUG(__filename, __line, "change gm from " + data.userid + " to " + roominfo.users[0].id)
+			roominfo.gm = roominfo.users[0].id
+		}
+
+		// 通知
+		socket.to(data.roomid).emit("room users changed", this.GenerateRoomRes(roominfo))
+	}
 }

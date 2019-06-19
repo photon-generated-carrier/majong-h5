@@ -8,9 +8,6 @@ var index = urlPath.indexOf("/", 7);
 var serverPath = urlPath.substring(0, index);
 var gUser = {}  // 当前用户
 var gGame = {}; // 保存全局信息 {users:[{id,name}], roominfo:{gm, id}}
-var gGameSocket = undefined; // 游戏中的长连接
-var gAliveId = undefined; // 包活id
-var gAliveTime = 0;		// 上次包活成功时间
 
 var game = new Phaser.Game(980, 1742, Phaser.AUTO, 'game')
 game.scale = Phaser.ScaleManager.SHOW_ALL
@@ -36,11 +33,6 @@ function handleLoginRsp(data) {
 		gUser.id = data.id
 		gUser.name = data.name
 		SetLocal("session", data.session) // 记录session
-
-		gAliveTime = new Date().getTime()
-		gAliveId = setInterval(function() {
-			HandleKeepAlive()
-		}, 2000)
 
 		game.state.start('Room');
 	} else if (data.ret == -10) {
